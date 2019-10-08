@@ -10,11 +10,11 @@ bitstream:
   image: vivado2018:2018.3
   script:
     - env
-    - /opt/Xilinx/Vivado/2018.3/bin/vivado -mode tcl -source build.tcl hw_alu.xpr
+    - /opt/Xilinx/Vivado/2018.3/bin/vivado -mode tcl -source build.tcl thinpad_top.xpr
 
   artifacts:
     paths:
-      - hw_alu.runs/impl_1/main.bit
-      - hw_alu.runs/impl_1/runme.log
-      - hw_alu.runs/synth_1/runme.log
+      - thinpad_top.runs/impl_1/thinpad_top.bit
+      - thinpad_top.runs/impl_1/runme.log
+      - thinpad_top.runs/synth_1/runme.log
 
