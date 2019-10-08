@@ -55,7 +55,10 @@ end
 // 组合输出
 always @(curr_st, data) begin
     case (curr_st)
-        `ST0: a = data;
+        `ST0: begin
+            a = data;
+            op = 0;
+        end
         `ST1: b = data;
         `ST2: op = data[3:0];
     endcase
