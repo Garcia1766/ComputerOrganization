@@ -211,6 +211,5 @@ module thinpad_top(
 // );
 // /* =========== Demo code end =========== */
 
-main real_alu(.clk(clock_btn), .rst(reset_btn), .data(dip_sw[15:0]), .f(leds));
 
 endmodule
