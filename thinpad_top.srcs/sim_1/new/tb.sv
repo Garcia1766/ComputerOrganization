@@ -60,18 +60,10 @@ initial begin
     reset_btn = 1;
     #10;
     reset_btn = 0;
-    for (integer i = 0; i < 10; i = i+1) begin
-        dip_sw = i;
-        #50;
-        clock_btn = 1;
-        #50;
-        clock_btn = 0;
-        #50;
-        clock_btn = 1;
-        #50;
-        clock_btn = 0;
+    for (byte i = 0; i < 10; i = i+1) begin
+        cpld.pc_send_byte(i);
+        #10000;
     end
-    dip_sw = 32'h0;
     for (integer i = 0; i < 10; i = i+1) begin
         #100; //等待100ns
         clock_btn = 1; //按下手工时钟按钮

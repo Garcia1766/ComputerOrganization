@@ -14,8 +14,8 @@ module thinpad_top(
     output wire[7:0]  dpy1,       //数码管高位信号，包括小数点，输出1点亮
 
     //CPLD串口控制器信号
-    output wire uart_rdn,         //读串口信号，低有效
-    output wire uart_wrn,         //写串口信号，低有效
+    output logic uart_rdn,         //读串口信号，低有效
+    output logic uart_wrn,         //写串口信号，低有效
     input wire uart_dataready,    //串口数据准备好
     input wire uart_tbre,         //发送数据标志
     input wire uart_tsre,         //数据发送完毕标志
@@ -215,48 +215,59 @@ module thinpad_top(
 assign ext_ram_ce_n = 1'b1;
 assign ext_ram_oe_n = 1'b1;
 assign ext_ram_we_n = 1'b1;
-assign uart_rdn = 1'b1;
-assign uart_wrn = 1'b1;
+
+assign base_ram_ce_n = 1'b0;
 assign base_ram_be_n = 4'b0;
 assign leds = base_ram_data[15:0];
 
-enum {RECEIVE, WRITE, TEMP, READ, IDLE} state;
+enum {RECEIVE, WRITE, READ, IDLE} state;
 
 logic[19:0] base_ram_addr_end;
 logic[31:0] bus_data_to_write;
+logic is_writing_bram;
 
-assign base_ram_data = bus_data_to_write;
+wire[7:0] uart_data;
+assign uart_data = base_ram_data[7:0];
 
-always_ff @(posedge clock_btn or posedge reset_btn) begin
+assign base_ram_data = is_writing_bram ? bus_data_to_write: 32'bz;
+
+always_ff @(posedge clk_11M0592 or posedge reset_btn) begin
     if(reset_btn) begin
-        state <= RECEIVE;
-        base_ram_addr <= dip_sw[19:0] - 1;
+        base_ram_addr <= dip_sw[19:0];
         base_ram_addr_end <= dip_sw[19:0] + 9;
         base_ram_oe_n <= 1;
         base_ram_we_n <= 1;
-        base_ram_ce_n <= 0;
+        uart_rdn <= 0;
+        uart_wrn <= 1;
+        is_writing_bram <= 0;
+        state <= RECEIVE;
     end else begin
         case (state)
             RECEIVE: begin
-                bus_data_to_write <= dip_sw;
-                base_ram_addr <= base_ram_addr+1;
-                base_ram_we_n <= 0;
-                state <= WRITE;
+                if (uart_dataready) begin
+                    bus_data_to_write <= {24'b0, uart_data};
+                    base_ram_we_n <= 0;
+                    is_writing_bram <= 1;
+                    uart_rdn <= 1;
+                    state <= WRITE;
+                end
             end
             WRITE: begin
+                is_writing_bram <= 0;
                 if (base_ram_addr == base_ram_addr_end) begin
                     base_ram_addr <= base_ram_addr - 9;
                     base_ram_oe_n <= 0;
                     base_ram_we_n <= 1;
+                    is_writing_bram <= 0;
                     bus_data_to_write <= 32'bz;
                     state <= READ;
                 end else begin
                     base_ram_we_n <= 1;
+                    is_writing_bram <= 0;
+                    uart_rdn <= 0;
+                    base_ram_addr <= base_ram_addr+1;
                     state <= RECEIVE;
                 end
-            end
-            TEMP: begin
-                bus_data_to_write <= dip_sw;
             end
             READ: begin
                 if (base_ram_addr == base_ram_addr_end) begin
