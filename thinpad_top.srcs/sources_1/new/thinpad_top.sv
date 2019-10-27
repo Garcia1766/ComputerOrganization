@@ -220,16 +220,16 @@ assign base_ram_ce_n = 1'b0;
 assign base_ram_be_n = 4'b0;
 assign leds = base_ram_data[15:0];
 
-enum {RECEIVE, WRITE, READ, IDLE} state;
+enum logic[2:0] {RECEIVE, WRITE, TRANSMIT, WAIT_TBRE, WAIT_TSRE, PULL_WRN, IDLE} state;
 
 logic[19:0] base_ram_addr_end;
 logic[31:0] bus_data_to_write;
-logic is_writing_bram;
+logic is_writing;
 
 wire[7:0] uart_data;
 assign uart_data = base_ram_data[7:0];
 
-assign base_ram_data = is_writing_bram ? bus_data_to_write: 32'bz;
+assign base_ram_data = is_writing ? bus_data_to_write: 32'bz;
 
 always_ff @(posedge clk_11M0592 or posedge reset_btn) begin
     if(reset_btn) begin
@@ -239,7 +239,7 @@ always_ff @(posedge clk_11M0592 or posedge reset_btn) begin
         base_ram_we_n <= 1;
         uart_rdn <= 0;
         uart_wrn <= 1;
-        is_writing_bram <= 0;
+        is_writing <= 0;
         state <= RECEIVE;
     end else begin
         case (state)
@@ -247,34 +247,52 @@ always_ff @(posedge clk_11M0592 or posedge reset_btn) begin
                 if (uart_dataready) begin
                     bus_data_to_write <= {24'b0, uart_data};
                     base_ram_we_n <= 0;
-                    is_writing_bram <= 1;
+                    is_writing <= 1;
                     uart_rdn <= 1;
                     state <= WRITE;
                 end
             end
             WRITE: begin
-                is_writing_bram <= 0;
+                is_writing <= 0;
                 if (base_ram_addr == base_ram_addr_end) begin
                     base_ram_addr <= base_ram_addr - 9;
                     base_ram_oe_n <= 0;
                     base_ram_we_n <= 1;
-                    is_writing_bram <= 0;
                     bus_data_to_write <= 32'bz;
-                    state <= READ;
+                    state <= TRANSMIT;
                 end else begin
                     base_ram_we_n <= 1;
-                    is_writing_bram <= 0;
                     uart_rdn <= 0;
                     base_ram_addr <= base_ram_addr+1;
                     state <= RECEIVE;
                 end
             end
-            READ: begin
-                if (base_ram_addr == base_ram_addr_end) begin
-                    state <= IDLE;
-                end else begin
-                    base_ram_addr <= base_ram_addr + 1;
-                    state <= READ;
+            TRANSMIT: begin
+                bus_data_to_write <= {24'b0, uart_data};
+                base_ram_oe_n <= 1;
+                uart_wrn <= 0;
+                is_writing <= 1;
+                state <= PULL_WRN;
+            end
+            PULL_WRN: begin
+                uart_wrn <= 1;
+                state <= WAIT_TBRE;
+            end
+            WAIT_TBRE: begin
+                if (uart_tbre) begin
+                    state <= WAIT_TSRE;
+                end
+            end
+            WAIT_TSRE: begin
+                is_writing <= 0;
+                if (uart_tsre) begin
+                    if (base_ram_addr == base_ram_addr_end) begin
+                        state <= IDLE;
+                    end else begin
+                        base_ram_oe_n <= 0;
+                        base_ram_addr <= base_ram_addr + 1;
+                        state <= TRANSMIT;
+                    end
                 end
             end
             default : /* default */;
