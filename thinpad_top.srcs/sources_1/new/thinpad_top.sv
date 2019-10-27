@@ -276,6 +276,7 @@ always_ff @(posedge clk_11M0592 or posedge reset_btn) begin
             end
             PULL_WRN: begin
                 uart_wrn <= 1;
+                is_writing <= 0;
                 state <= WAIT_TBRE;
             end
             WAIT_TBRE: begin
@@ -284,7 +285,6 @@ always_ff @(posedge clk_11M0592 or posedge reset_btn) begin
                 end
             end
             WAIT_TSRE: begin
-                is_writing <= 0;
                 if (uart_tsre) begin
                     if (base_ram_addr == base_ram_addr_end) begin
                         state <= IDLE;
