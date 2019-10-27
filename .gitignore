@@ -4,3 +4,5 @@
 vivado.*
 *.str
 *.ip_user_files/
+*.sim/
+*.wcfg

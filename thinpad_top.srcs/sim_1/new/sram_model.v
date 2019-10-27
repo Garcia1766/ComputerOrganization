@@ -12,9 +12,9 @@
 //
 //  Description:  Alliance 4Mb Fast Asynchronous SRAM
 //
-//  Note: The model is Done for 10ns cycle time . To work with other cycle time, 
+//  Note: The model is Done for 10ns cycle time . To work with other cycle time,
 //  we have to change the timing parameters according to Data sheet.
-//   
+//
 //**************************************************************************//
 
 `timescale 1 ns/1 ps
@@ -47,7 +47,7 @@ time tow ;   // output active from write end
 time tbw ;   // byte enable low to write end
 
 time UB_n_start_time=0,LB_n_start_time=0;
-time write_address1_time=0,write_data1_time=0,write_CE_n_start_time1=0,write_WE_n_start_time1=0; 
+time write_address1_time=0,write_data1_time=0,write_CE_n_start_time1=0,write_WE_n_start_time1=0;
 time write_CE_n_start_time=0,write_WE_n_start_time=0,write_address_time=0,write_data_time=0;
 time temptaa, temptoe, read_address_add,read_address_oe ;
 
@@ -85,14 +85,24 @@ reg   [7:0] mem_array0 [1048575:0];
 reg   [15:8] mem_array1 [1048575:0];
 reg   [15:0] dataIO1;
 
-            //For Read Access       
+            //For Read Access
 reg   [15:0] data_read;
 reg   [19:0] Address_read1,Address_read2 ;
 reg   initiate_read1,initiate_read2;
 
+wire[7:0] test_mem[9:0];
+assign test_mem[0] = mem_array0[0];
+assign test_mem[1] = mem_array0[1];
+assign test_mem[2] = mem_array0[2];
+assign test_mem[3] = mem_array0[3];
+assign test_mem[4] = mem_array0[4];
+assign test_mem[5] = mem_array0[5];
+assign test_mem[6] = mem_array0[6];
+assign test_mem[7] = mem_array0[7];
+assign test_mem[8] = mem_array0[8];
+assign test_mem[9] = mem_array0[9];
 
-
-//Intializing values 
+//Intializing values
 
 initial
    begin
@@ -125,26 +135,26 @@ initial
    tbhz = 5 ;
    tpu = 0 ;
    tpd = 10;
-        // Internal Time signals  
-    
+        // Internal Time signals
+
     initiate_write1 = 1'b0;
     initiate_write2 = 1'b0;
     initiate_write3 = 1'b0;
-    
+
     data_read = 16'hzz;
     initiate_read1 =1'b0;
     initiate_read2 =1'b0;
     read_address_time =0;
-    
+
     read_address_add=0;
     read_address_oe=0;
     temptaa =  taa;
     temptoe =  toe;
-    
+
     end
-  
- 
- 
+
+
+
 //********* start Accessing  by CE_n low*******
 
   always@(negedge CE_n)
@@ -154,9 +164,9 @@ initial
      write_CE_n_start_time <= $time;
      read_CE_n_start_time <=$time;
      end
- 
+
  //****  Write Access *************
- 
+
  //****** CE_n controlled ***********
   always@(posedge CE_n)
     begin
@@ -165,42 +175,42 @@ initial
             if ( (WE_n == 1'b0) && ( ($time - write_WE_n_start_time) >=twp1) )
             begin
               Address_write2 <= Address_write1;
-                    dummy_array0[Address_write1] <= dataIO1[7:0];  
-                  dummy_array1[Address_write1] <= dataIO1[15:8] ;  
+                    dummy_array0[Address_write1] <= dataIO1[7:0];
+                  dummy_array1[Address_write1] <= dataIO1[15:8] ;
                     activate_cebar <= 1'b1;
             end
             else
                activate_cebar <= 1'b0;
-      end            
+      end
       else
       begin
            activate_cebar <= 1'b0;
       end
     end
-    
-  
+
+
  //***** UB_n/LB_n change  *********
- 
+
     always @(negedge UB_n)
        begin
          UB_n_start_time <= $time;
        end
-   
+
     always @(negedge LB_n)
       begin
          LB_n_start_time <= $time;
-       end    
+       end
 
-//***** WE_n controlled  **********    
-          
+//***** WE_n controlled  **********
+
    always @(negedge WE_n)
      begin
       activate_webar <= 1'b0;
       activate_wecebar<=1'b0;
       write_WE_n_start_time <= $time;
       #twz WE_dly <= WE_n;
-     end  
-     
+     end
+
   always @(posedge WE_n  )
     begin
       WE_dly <= WE_n;
@@ -209,56 +219,56 @@ initial
       begin
             if ( (CE_n == 1'b0) && ( ($time - write_CE_n_start_time) >= tcw) )
             begin
-          Address_write2 <= Address_write1;  
-          dummy_array0[Address_write1] <= dataIO1[7:0]; 
+          Address_write2 <= Address_write1;
+          dummy_array0[Address_write1] <= dataIO1[7:0];
                 dummy_array1[Address_write1] <= dataIO1[15:8] ;
                 activate_webar <= 1'b1;
-            end 
-            else 
+            end
+            else
                   activate_webar <= 1'b0;
-      end       
+      end
       else
       begin
             activate_webar <= 1'b0;
-      end 
-   end       
- 
+      end
+   end
+
  //******* WE_n & CE_n controlled ( If both comes to high at the same time)**********
  always @(CE_n && WE_n)
    begin
      if ( (CE_n ==1'b1) && (WE_n ==1'b1) )
-     begin 
+     begin
            if ( ( ($time - write_WE_n_start_time) >=twp1) && (($time-write_CE_n_start_time) >=tcw))
      begin
-          Address_write2 <= Address_write1;  
-          dummy_array0[Address_write1] <= dataIO1[7:0]; 
+          Address_write2 <= Address_write1;
+          dummy_array0[Address_write1] <= dataIO1[7:0];
                 dummy_array1[Address_write1] <= dataIO1[15:8] ;
                 activate_webar <= 1'b1;
-            end 
+            end
            else
-               activate_wecebar <= 1'b0 ;    
-           end 
+               activate_wecebar <= 1'b0 ;
+           end
      else
            activate_wecebar <=1'b0;
-  end   
-  
+  end
 
-  
+
+
   always@(CE_n or WE_n or OE_n or Address or DataIO )
     begin
       if ((CE_n==1'b0) && (WE_n ==1'b0))
      begin
             Address_write1 <= Address;
                 Address_write2 <= Address_write1;
-              dataIO1  <= DataIO;  
+              dataIO1  <= DataIO;
         dummy_array0[Address_write1] <=  dataIO1[7:0] ;
               dummy_array1[Address_write1] <=  dataIO1[15:8] ;
           end
     end
- 
- 
+
+
  //********* DATAIO changes before write completion, then New write(2) initation **************
- 
+
  always @(DataIO)
    begin
      write_data_time <= $time;
@@ -276,11 +286,11 @@ initial
          end
     end
 end
- 
- 
+
+
  //******* Address changes before write completion, then New write(3) initation*************************
- 
- 
+
+
  always @(Address)
    begin
      write_address_time <= $time;
@@ -305,10 +315,10 @@ end
 
 
 //******* activate_cebar or activate_webar or ini_weceba goes high - initiate write access **************
- 
-always@(activate_cebar or activate_webar or activate_wecebar) 
+
+always@(activate_cebar or activate_webar or activate_wecebar)
   begin
-     if ( (activate_cebar == 1'b1) || (activate_webar == 1'b1) || (activate_wecebar == 1'b1) ) 
+     if ( (activate_cebar == 1'b1) || (activate_webar == 1'b1) || (activate_wecebar == 1'b1) )
      begin
          if ( ( ($time - write_data1_time) >= tdw) && ( ($time - write_address1_time) >= twc) )
             initiate_write1 <= 1'b1;
@@ -317,15 +327,15 @@ always@(activate_cebar or activate_webar or activate_wecebar)
      end
      else
        initiate_write1 <= 1'b0;
-end 
- 
+end
+
 
 
 //***** Write completion (Writing into mem_arrayx[][]) ***********
 
-always@( initiate_write1 )   
+always@( initiate_write1 )
   begin
-   if ( ( ($time - write_WE_n_start_time) >=twp1) && ( ($time - write_CE_n_start_time) >=tcw) )   
+   if ( ( ($time - write_WE_n_start_time) >=twp1) && ( ($time - write_CE_n_start_time) >=tcw) )
       begin
     if(UB_n == 1'b0 && (($time - UB_n_start_time) >= tbw))
     begin
@@ -334,12 +344,12 @@ always@( initiate_write1 )
     if (LB_n == 1'b0 && (($time - LB_n_start_time) >= tbw))
     begin
       mem_array0[Address_write2] <= dummy_array0[Address_write2];
-    end   
-      end 
+    end
+      end
       initiate_write1 <=1'b0;
 end
 
-always @(initiate_write2 )  
+always @(initiate_write2 )
 begin
        if ( ( ($time - write_WE_n_start_time) >=twp1) && ( ($time - write_CE_n_start_time) >=tcw))
        begin
@@ -350,16 +360,16 @@ begin
     if (LB_n == 1'b0 && (($time - LB_n_start_time) >= tbw))
     begin
       mem_array0[Address_write2] <= dummy_array0[Address_write2];
-    end   
+    end
       end
 
-    if ( (initiate_write2==1'b1)) 
-       begin  
+    if ( (initiate_write2==1'b1))
+       begin
     initiate_write2 <=1'b0;
    end
 end
 
-always @(initiate_write3 )  
+always @(initiate_write3 )
 begin
        if ( ( ($time - write_WE_n_start_time) >=twp1) && ( ($time - write_CE_n_start_time) >=tcw))
        begin
@@ -370,11 +380,11 @@ begin
     if (LB_n == 1'b0 && (($time - LB_n_start_time) >= tbw))
     begin
       mem_array0[Address_write2] <= dummy_array0[Address_write2];
-    end   
+    end
       end
-      
-   if ( (initiate_write3==1'b1)) 
-       begin  
+
+   if ( (initiate_write3==1'b1))
+       begin
     initiate_write3 <=1'b0;
    end
 end
@@ -382,18 +392,18 @@ end
 //****** Read Access  ********************
 
 //******** Address transition initiates the Read access ********
- always@(Address)      // Address change exactly =trc 
-   begin 
+ always@(Address)      // Address change exactly =trc
+   begin
      read_address_time <=$time;
      Address_read1 <=Address;
      Address_read2 <=Address_read1;
-     if ( ($time - read_address_time) == trc) 
+     if ( ($time - read_address_time) == trc)
      begin
          if ( (CE_n == 1'b0) && (WE_n == 1'b1) )
       initiate_read1 <= 1'b1;
          else
             initiate_read1 <= 1'b0;
-     end  
+     end
      else
        initiate_read1 <= 1'b0;
 end
@@ -401,10 +411,10 @@ end
 //***** Address valid long time(>=trc)*************
 
 always #1
-  begin 
+  begin
      if ( ($time - read_address_time) >= trc)
      begin
-     
+
          if ( (CE_n == 1'b0) && (WE_n == 1'b1) )
          begin
              Address_read2 <=Address_read1;
@@ -426,7 +436,7 @@ always @(negedge OE_n)
   end
 
 //***** Data drive to data_read when $time >= taa & tace & trc (all are having same times) ******
- 
+
 always@(initiate_read1 or initiate_read2)
   begin
      if ( (initiate_read1 == 1'b1) || (initiate_read2 == 1'b1) )
@@ -435,11 +445,11 @@ always@(initiate_read1 or initiate_read2)
          begin
              if ( ( ($time - read_WE_n_start_time) >=trc) && ( ($time -read_CE_n_start_time) >=tace) && ( ($time - read_OE_n_start_time) >=toe))
              begin
-      if((LB_n == 1'b0) && (($time - LB_n_start_time) >= tba))              
+      if((LB_n == 1'b0) && (($time - LB_n_start_time) >= tba))
       data_read[7:0] <= mem_array0[Address_read2];
       else
           data_read[7:0] <= 8'bzz;
-      if((UB_n == 1'b0) && ( ($time - UB_n_start_time) >= tba)) 
+      if((UB_n == 1'b0) && ( ($time - UB_n_start_time) >= tba))
                 data_read[15:8] <= mem_array1[Address_read2];
           else
                   data_read[15:8] <= 8'bzz;
@@ -451,18 +461,18 @@ always@(initiate_read1 or initiate_read2)
       initiate_read1 <=1'b0;
       initiate_read2 <=1'b0;
 end
-  
+
 
 
  //********** Driving DataIO during OE_n low *********
- 
+
   wire [15:0] DataIO =  (!OE_n && WE_dly) ?  data_read[15:0] : 16'bz ;
- 
- 
+
+
  //******* simultion Finish by `tsim ***********
 //initial # `tsim $finish;
- 
-    
-  
-  endmodule  
-    
+
+
+
+  endmodule
+

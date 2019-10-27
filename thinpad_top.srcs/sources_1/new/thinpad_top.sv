@@ -9,7 +9,7 @@ module thinpad_top(
 
     input  wire[3:0]  touch_btn,  //BTN1~BTN4，按钮开关，按下时为1
     input  wire[31:0] dip_sw,     //32位拨码开关，拨到“ON”时为1
-    output wire[15:0] leds,       //16位LED，输出时1点亮
+    output logic[15:0] leds,       //16位LED，输出时1点亮
     output wire[7:0]  dpy0,       //数码管低位信号，包括小数点，输出1点亮
     output wire[7:0]  dpy1,       //数码管高位信号，包括小数点，输出1点亮
 
@@ -22,11 +22,11 @@ module thinpad_top(
 
     //BaseRAM信号
     inout wire[31:0] base_ram_data,  //BaseRAM数据，低8位与CPLD串口控制器共享
-    output wire[19:0] base_ram_addr, //BaseRAM地址
-    output wire[3:0] base_ram_be_n,  //BaseRAM字节使能，低有效。如果不使用字节使能，请保持为0
-    output wire base_ram_ce_n,       //BaseRAM片选，低有效
-    output wire base_ram_oe_n,       //BaseRAM读使能，低有效
-    output wire base_ram_we_n,       //BaseRAM写使能，低有效
+    output logic[19:0] base_ram_addr, //BaseRAM地址
+    output logic[3:0] base_ram_be_n,  //BaseRAM字节使能，低有效。如果不使用字节使能，请保持为0
+    output logic base_ram_ce_n,       //BaseRAM片选，低有效
+    output logic base_ram_oe_n,       //BaseRAM读使能，低有效
+    output logic base_ram_we_n,       //BaseRAM写使能，低有效
 
     //ExtRAM信号
     inout wire[31:0] ext_ram_data,  //ExtRAM数据
@@ -218,8 +218,9 @@ assign ext_ram_we_n = 1'b1;
 assign uart_rdn = 1'b1;
 assign uart_wrn = 1'b1;
 assign base_ram_be_n = 4'b0;
+assign leds = base_ram_data[15:0];
 
-enum {RECEIVE, WRITE, READ, IDLE} state;
+enum {RECEIVE, WRITE, TEMP, READ, IDLE} state;
 
 logic[19:0] base_ram_addr_end;
 logic[31:0] bus_data_to_write;
@@ -229,38 +230,38 @@ assign base_ram_data = bus_data_to_write;
 always_ff @(posedge clock_btn or posedge reset_btn) begin
     if(reset_btn) begin
         state <= RECEIVE;
-        base_ram_addr <= dip_sw[19:0];
+        base_ram_addr <= dip_sw[19:0] - 1;
         base_ram_addr_end <= dip_sw[19:0] + 9;
+        base_ram_oe_n <= 1;
+        base_ram_we_n <= 1;
+        base_ram_ce_n <= 0;
     end else begin
         case (state)
             RECEIVE: begin
                 bus_data_to_write <= dip_sw;
-                leds <= dip_sw[15:0];
+                base_ram_addr <= base_ram_addr+1;
                 base_ram_we_n <= 0;
-                is_writing <= 1;
                 state <= WRITE;
             end
             WRITE: begin
                 if (base_ram_addr == base_ram_addr_end) begin
-                    leds <= {base_ram_addr-9}[15:0];
                     base_ram_addr <= base_ram_addr - 9;
                     base_ram_oe_n <= 0;
                     base_ram_we_n <= 1;
-                    is_writing <= 0;
+                    bus_data_to_write <= 32'bz;
                     state <= READ;
                 end else begin
-                    base_ram_addr <= base_ram_addr + 1;
-                    leds <= {base_ram_addr+1}[15:0];
                     base_ram_we_n <= 1;
                     state <= RECEIVE;
                 end
             end
+            TEMP: begin
+                bus_data_to_write <= dip_sw;
+            end
             READ: begin
                 if (base_ram_addr == base_ram_addr_end) begin
-                    leds <= 0;
                     state <= IDLE;
                 end else begin
-                    leds <= base_ram_data[15:0];
                     base_ram_addr <= base_ram_addr + 1;
                     state <= READ;
                 end

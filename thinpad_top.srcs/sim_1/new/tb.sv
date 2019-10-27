@@ -52,20 +52,36 @@ parameter FLASH_INIT_FILE = "/tmp/kernel.elf";    //Flash初始化文件，请�
 
 assign rxd = 1'b1; //idle state
 
-initial begin 
+initial begin
     //在这里可以自定义测试输入序列，例如：
-    dip_sw = 32'h2;
-    touch_btn = 0;
-    for (integer i = 0; i < 20; i = i+1) begin
+    dip_sw = 32'h0;
+    reset_btn = 0;
+    #10;
+    reset_btn = 1;
+    #10;
+    reset_btn = 0;
+    for (integer i = 0; i < 10; i = i+1) begin
+        dip_sw = i;
+        #50;
+        clock_btn = 1;
+        #50;
+        clock_btn = 0;
+        #50;
+        clock_btn = 1;
+        #50;
+        clock_btn = 0;
+    end
+    dip_sw = 32'h0;
+    for (integer i = 0; i < 10; i = i+1) begin
         #100; //等待100ns
         clock_btn = 1; //按下手工时钟按钮
         #100; //等待100ns
         clock_btn = 0; //松开手工时钟按钮
     end
     // 模拟PC通过串口发送字符
-    cpld.pc_send_byte(8'h32);
-    #10000;
-    cpld.pc_send_byte(8'h33);
+    // cpld.pc_send_byte(8'h32);
+    // #10000;
+    // cpld.pc_send_byte(8'h33);
 end
 
 // 待测试用户设计
@@ -158,21 +174,21 @@ sram_model ext2(/*autoinst*/
             .UB_n(ext_ram_be_n[3]));
 // Flash 仿真模型
 x28fxxxp30 #(.FILENAME_MEM(FLASH_INIT_FILE)) flash(
-    .A(flash_a[1+:22]), 
-    .DQ(flash_d), 
-    .W_N(flash_we_n),    // Write Enable 
+    .A(flash_a[1+:22]),
+    .DQ(flash_d),
+    .W_N(flash_we_n),    // Write Enable
     .G_N(flash_oe_n),    // Output Enable
     .E_N(flash_ce_n),    // Chip Enable
     .L_N(1'b0),    // Latch Enable
     .K(1'b0),      // Clock
     .WP_N(flash_vpen),   // Write Protect
     .RP_N(flash_rp_n),   // Reset/Power-Down
-    .VDD('d3300), 
-    .VDDQ('d3300), 
-    .VPP('d1800), 
+    .VDD('d3300),
+    .VDDQ('d3300),
+    .VPP('d1800),
     .Info(1'b1));
 
-initial begin 
+initial begin
     wait(flash_byte_n == 1'b0);
     $display("8-bit Flash interface is not supported in simulation!");
     $display("Please tie flash_byte_n to high");
@@ -180,11 +196,11 @@ initial begin
 end
 
 // 从文件加载 BaseRAM
-initial begin 
+initial begin
     reg [31:0] tmp_array[0:1048575];
     integer n_File_ID, n_Init_Size;
     n_File_ID = $fopen(BASE_RAM_INIT_FILE, "rb");
-    if(!n_File_ID)begin 
+    if(!n_File_ID)begin
         n_Init_Size = 0;
         $display("Failed to open BaseRAM init file");
     end else begin
@@ -202,11 +218,11 @@ initial begin
 end
 
 // 从文件加载 ExtRAM
-initial begin 
+initial begin
     reg [31:0] tmp_array[0:1048575];
     integer n_File_ID, n_Init_Size;
     n_File_ID = $fopen(EXT_RAM_INIT_FILE, "rb");
-    if(!n_File_ID)begin 
+    if(!n_File_ID)begin
         n_Init_Size = 0;
         $display("Failed to open ExtRAM init file");
     end else begin
