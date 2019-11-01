@@ -218,65 +218,50 @@ assign ext_ram_we_n = 1'b1;
 
 assign base_ram_ce_n = 1'b0;
 assign base_ram_be_n = 4'b0;
-assign leds = base_ram_data[15:0];
 
 enum logic[2:0] {RECEIVE, WRITE, TRANSMIT, WAIT_TBRE, WAIT_TSRE, PULL_WRN, IDLE} state;
 
-logic[19:0] base_ram_addr_end;
-logic[31:0] bus_data_to_write;
-logic is_writing;
-
-wire[7:0] uart_data;
-assign uart_data = base_ram_data[7:0];
-
-assign base_ram_data = is_writing ? bus_data_to_write: 32'bz;
+logic[3:0] cnt;
 
 always_ff @(posedge clk_11M0592 or posedge reset_btn) begin
     if(reset_btn) begin
         base_ram_addr <= dip_sw[19:0];
-        base_ram_addr_end <= dip_sw[19:0] + 9;
+        cnt <= 0;
         base_ram_oe_n <= 1;
         base_ram_we_n <= 1;
-        uart_rdn <= 0;
+        uart_rdn <= 1;
         uart_wrn <= 1;
-        is_writing <= 0;
         state <= RECEIVE;
     end else begin
         case (state)
             RECEIVE: begin
                 if (uart_dataready) begin
-                    bus_data_to_write <= {24'b0, uart_data};
                     base_ram_we_n <= 0;
-                    is_writing <= 1;
-                    uart_rdn <= 1;
+                    uart_rdn <= 0;
                     state <= WRITE;
                 end
             end
             WRITE: begin
-                is_writing <= 0;
-                if (base_ram_addr == base_ram_addr_end) begin
+                uart_rdn <= 1;
+                if (cnt == 4'b1001) begin
                     base_ram_addr <= base_ram_addr - 9;
+                    cnt <= 0;
                     base_ram_oe_n <= 0;
                     base_ram_we_n <= 1;
-                    bus_data_to_write <= 32'bz;
                     state <= TRANSMIT;
                 end else begin
                     base_ram_we_n <= 1;
-                    uart_rdn <= 0;
-                    base_ram_addr <= base_ram_addr+1;
+                    base_ram_addr <= base_ram_addr + 1;
+                    cnt <= cnt+1;
                     state <= RECEIVE;
                 end
             end
             TRANSMIT: begin
-                bus_data_to_write <= {24'b0, uart_data};
-                base_ram_oe_n <= 1;
                 uart_wrn <= 0;
-                is_writing <= 1;
                 state <= PULL_WRN;
             end
             PULL_WRN: begin
                 uart_wrn <= 1;
-                is_writing <= 0;
                 state <= WAIT_TBRE;
             end
             WAIT_TBRE: begin
@@ -286,11 +271,11 @@ always_ff @(posedge clk_11M0592 or posedge reset_btn) begin
             end
             WAIT_TSRE: begin
                 if (uart_tsre) begin
-                    if (base_ram_addr == base_ram_addr_end) begin
+                    if (cnt == 9) begin
                         state <= IDLE;
                     end else begin
-                        base_ram_oe_n <= 0;
                         base_ram_addr <= base_ram_addr + 1;
+                        cnt <= cnt + 1;
                         state <= TRANSMIT;
                     end
                 end
