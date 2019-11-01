@@ -243,14 +243,13 @@ always_ff @(posedge clk_11M0592 or posedge reset_btn) begin
             end
             WRITE: begin
                 uart_rdn <= 1;
+                base_ram_we_n <= 1;
                 if (cnt == 4'b1001) begin
                     base_ram_addr <= base_ram_addr - 9;
                     cnt <= 0;
                     base_ram_oe_n <= 0;
-                    base_ram_we_n <= 1;
                     state <= TRANSMIT;
                 end else begin
-                    base_ram_we_n <= 1;
                     base_ram_addr <= base_ram_addr + 1;
                     cnt <= cnt+1;
                     state <= RECEIVE;
