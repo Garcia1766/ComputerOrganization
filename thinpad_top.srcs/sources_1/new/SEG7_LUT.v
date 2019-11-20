@@ -5,7 +5,7 @@ reg     [6:0]   oSEG;
 
 always @(iDIG)
 begin
-        case(iDIG)
+    case(iDIG)
         4'h1: oSEG = 7'b1110110;    // ---t----
         4'h2: oSEG = 7'b0100001;    // |      |
         4'h3: oSEG = 7'b0100100;    // lt    rt
@@ -22,7 +22,7 @@ begin
         4'he: oSEG = 7'b0001001;
         4'hf: oSEG = 7'b0001011;
         4'h0: oSEG = 7'b1000000;
-        endcase
+    endcase
 end
 
 assign oSEG1 = {~oSEG,1'b0};
