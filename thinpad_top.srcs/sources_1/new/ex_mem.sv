@@ -4,18 +4,18 @@ module ex_mem(
     input wire              clk,
     input wire              rst,
 
-    //来自执行阶段的信息
+    //来自ex阶段的信息
     input wire[`RegAddrBus] ex_wd,
     input wire              ex_wreg,
     input wire[`RegBus]     ex_wdata,
 
-    //送到访存阶段的信息
+    //送到mem阶段的信息
     output reg[`RegAddrBus] mem_wd,
     output reg              mem_wreg,
     output reg[`RegBus]     mem_wdata
 );
 
-always @ (posedge clk) begin
+always_ff @ (posedge clk) begin
     if(rst == `RstEnable) begin
         mem_wd <= `NOPRegAddr;
         mem_wreg <= `WriteDisable;

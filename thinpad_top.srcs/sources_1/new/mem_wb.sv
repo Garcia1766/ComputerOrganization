@@ -5,18 +5,18 @@ module mem_wb(
     input wire              clk,
     input wire              rst,
 
-    //来自访存阶段的信息
+    //来自mem阶段的信息
     input wire[`RegAddrBus] mem_wd,     // 回写寄存器
     input wire              mem_wreg,   // 是否回写
     input wire[`RegBus]     mem_wdata,  // 回写数据
 
-    //送到回写阶段的信息
+    //送到wb阶段的信息
     output reg[`RegAddrBus] wb_wd,
     output reg              wb_wreg,
     output reg[`RegBus]     wb_wdata
 );
 
-always @ (posedge clk) begin
+always_ff @ (posedge clk) begin
     if(rst == `RstEnable) begin
         wb_wd    <= `NOPRegAddr;
         wb_wreg  <= `WriteDisable;

@@ -17,30 +17,87 @@ module ex(
 
 );
 
-reg[`RegBus] logicout;
+// 算数&逻辑指令的结果
+reg[`RegBus] arithout;
+reg[`RegBus] moveres;
 
-always @ (*) begin
+// slt相关的逻辑，留作备考
+// // 一些中间结果
+// logic reg1_lt_reg2; // reg1是否小于reg2
+// logic[`RegBus] reg2_i_mux;   // reg2的补码
+// logic[`RegBus] sum_res;      // 加法结果
+
+// assign reg2_i_mux = (aluop_i == `EXE_SLT_OP) ? (~reg2_i)+1 : reg2_i;
+// assign sum_res = reg1_i + reg2_i_mux;
+// assign reg1_lt_reg2 = (aluop_i == `EXE_SLT_OP) ?
+//                         ((reg1_i[31] && !reg2_i[31]) || (!reg1_i[31] && !reg2_i[31] && sum_res[31]) || (reg1_i[31] && reg2_i[31] && sum_res[31]))
+//                         : (reg1_i < reg2_i);
+
+
+// 算数运算的组合逻辑
+always_comb begin
     if(rst == `RstEnable) begin
-        logicout <= `ZeroWord;
+        arithout <= `ZeroWord;
     end else begin
         case (aluop_i)
-            `EXE_OR_OP: begin logicout <= reg1_i | reg2_i; end
-            default:    begin logicout <= `ZeroWord; end
+            `EXE_OR_OP : begin arithout <= reg1_i | reg2_i; end
+            `EXE_AND_OP: begin arithout <= reg1_i & reg2_i; end
+            `EXE_XOR_OP: begin arithout <= reg1_i ^ reg2_i; end
+            `EXE_SLL_OP: begin arithout <= reg2_i << reg1_i[4:0]; end
+            `EXE_SRL_OP: begin arithout <= reg2_i >> reg1_i[4:0]; end
+            `EXE_ADD_OP: begin arithout <= reg1_i + reg2_i; end
+            // `EXE_SLT_OP, `EXE_SLTU_OP: begin
+            //     arithout <= reg1_lt_reg2;
+            // end
+            `EXE_CLZ_OP: begin  // 计算前导零的数量
+                arithout <=
+                reg1_i[31] ? 0  : reg1_i[30] ? 1  : reg1_i[29] ? 2  :
+                reg1_i[28] ? 3  : reg1_i[27] ? 4  : reg1_i[26] ? 5  :
+                reg1_i[25] ? 6  : reg1_i[24] ? 7  : reg1_i[23] ? 8  :
+                reg1_i[22] ? 9  : reg1_i[21] ? 10 : reg1_i[20] ? 11 :
+                reg1_i[19] ? 12 : reg1_i[18] ? 13 : reg1_i[17] ? 14 :
+                reg1_i[16] ? 15 : reg1_i[15] ? 16 : reg1_i[14] ? 17 :
+                reg1_i[13] ? 18 : reg1_i[12] ? 19 : reg1_i[11] ? 20 :
+                reg1_i[10] ? 21 : reg1_i[9]  ? 22 : reg1_i[8]  ? 23 :
+                reg1_i[7]  ? 24 : reg1_i[6]  ? 25 : reg1_i[5]  ? 26 :
+                reg1_i[4]  ? 27 : reg1_i[3]  ? 28 : reg1_i[2]  ? 29 :
+                reg1_i[1]  ? 30 : reg1_i[0]  ? 31 : 32;
+            end
+            default: begin arithout <= `ZeroWord; end
         endcase
     end    //if
 end      //always
 
+// move运算的组合逻辑
+always_comb begin
+    if(rst == `RstEnable) begin
+        moveres <= `ZeroWord;
+    end else begin
+        moveres <= `ZeroWord;
+        case(aluop_i)
+            `EXE_MOVN_OP: begin
+                moveres <= reg1_i;
+            end
+            default: begin
+            end
+        endcase
+    end
+end
 
-always @ (*) begin
+// 输出的组合逻辑
+always_comb begin
     wd_o <= wd_i;
     wreg_o <= wreg_i;
     case (alusel_i)
-        `EXE_RES_LOGIC: begin
-            wdata_o <= logicout;
-        end
-        default: begin
-            wdata_o <= `ZeroWord;
-        end
+    `EXE_RES_ARITH: begin
+        wdata_o <= arithout;
+    end
+    `EXE_RES_MOVE: begin
+        wdata_o <= moveres;
+    end
+    default: begin
+        wdata_o <= `ZeroWord;
+    end
     endcase
 end
 

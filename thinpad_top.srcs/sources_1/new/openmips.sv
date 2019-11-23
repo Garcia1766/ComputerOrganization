@@ -50,8 +50,8 @@ wire[`RegAddrBus]   wb_wd_i;
 wire[`RegBus]       wb_wdata_i;
 
 //连接译码阶段ID模块与通用寄存器Regfile模块
-wire                reg1_read;
-wire                reg2_read;
+// wire                reg1_read;
+// wire                reg2_read;
 wire[`RegBus]       reg1_data;
 wire[`RegBus]       reg2_data;
 wire[`RegAddrBus]   reg1_addr;
@@ -86,10 +86,17 @@ id id0(
     .reg1_data_i(reg1_data),
     .reg2_data_i(reg2_data),
 
-    //送到regfile的信息
-    .reg1_read_o(reg1_read),
-    .reg2_read_o(reg2_read),
+    // ex阶段的前传数据
+    .ex_wreg_i(ex_wreg_o),
+    .ex_wdata_i(ex_wdata_o),
+    .ex_wd_i(ex_wd_o),
 
+    // mem阶段的前传数据
+    .mem_wreg_i(mem_wreg_o),
+    .mem_wdata_i(mem_wdata_o),
+    .mem_wd_i(mem_wd_o),
+
+    // 寄存器读取地址
     .reg1_addr_o(reg1_addr),
     .reg2_addr_o(reg2_addr),
 
@@ -109,10 +116,8 @@ regfile regfile1(
     .we    (wb_wreg_i),
     .waddr (wb_wd_i),
     .wdata (wb_wdata_i),
-    .re1 (reg1_read),
     .raddr1 (reg1_addr),
     .rdata1 (reg1_data),
-    .re2 (reg2_read),
     .raddr2 (reg2_addr),
     .rdata2 (reg2_data)
 );

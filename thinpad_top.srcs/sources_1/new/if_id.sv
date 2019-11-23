@@ -10,13 +10,13 @@ module if_id(
     output reg[`InstBus]     id_inst
 );
 
-always @ (posedge clk) begin
+always_ff @ (posedge clk) begin
     if (rst == `RstEnable) begin
         id_pc <= `ZeroWord;
         id_inst <= `ZeroWord;
-    end else begin
+    end else begin      // 小端序转换成大端序
         id_pc <= if_pc;
-        id_inst <= if_inst;
+        id_inst <= {if_inst[7:0], if_inst[15:8], if_inst[23:16], if_inst[31:24]};
     end
 end
 
