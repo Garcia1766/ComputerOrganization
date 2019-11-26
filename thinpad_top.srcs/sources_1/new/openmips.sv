@@ -50,17 +50,19 @@ wire[`RegAddrBus]   wb_wd_i;
 wire[`RegBus]       wb_wdata_i;
 
 //连接译码阶段ID模块与通用寄存器Regfile模块
-// wire                reg1_read;
-// wire                reg2_read;
 wire[`RegBus]       reg1_data;
 wire[`RegBus]       reg2_data;
 wire[`RegAddrBus]   reg1_addr;
 wire[`RegAddrBus]   reg2_addr;
 
+wire[5:0] stall;
+wire stall_req_id;
+
 //pc_reg例化
 pc_reg pc_reg0(
     .clk(clk),
     .rst(rst),
+    .stall(stall),
     .pc(pc),
     .ce(rom_ce_o)
 );
@@ -73,6 +75,7 @@ if_id if_id0(
     .rst(rst),
     .if_pc(pc),
     .if_inst(rom_data_i),
+    .stall(stall),
     .id_pc(id_pc_i),
     .id_inst(id_inst_i)
 );
@@ -106,7 +109,9 @@ id id0(
     .reg1_o(id_reg1_o),
     .reg2_o(id_reg2_o),
     .wd_o(id_wd_o),
-    .wreg_o(id_wreg_o)
+    .wreg_o(id_wreg_o),
+
+    .stallreq(stall_req_id)
 );
 
 //通用寄存器Regfile例化
@@ -126,6 +131,8 @@ regfile regfile1(
 id_ex id_ex0(
     .clk(clk),
     .rst(rst),
+
+    .stall(stall),
 
     //从译码阶段ID模块传递的信息
     .id_aluop(id_aluop_o),
@@ -167,6 +174,8 @@ ex_mem ex_mem0(
     .clk(clk),
     .rst(rst),
 
+    .stall(stall),
+
     //来自执行阶段EX模块的信息
     .ex_wd(ex_wd_o),
     .ex_wreg(ex_wreg_o),
@@ -198,6 +207,8 @@ mem_wb mem_wb0(
     .clk(clk),
     .rst(rst),
 
+    .stall(stall),
+
     //来自访存阶段MEM模块的信息
     .mem_wd(mem_wd_o),
     .mem_wreg(mem_wreg_o),
@@ -207,6 +218,12 @@ mem_wb mem_wb0(
     .wb_wd(wb_wd_i),
     .wb_wreg(wb_wreg_i),
     .wb_wdata(wb_wdata_i)
+);
+
+ctrl ctrl0(
+    .rst(rst),
+    .stall_req_id(stall_req_id),
+    .stall(stall)
 );
 
 endmodule

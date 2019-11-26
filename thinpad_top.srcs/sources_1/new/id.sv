@@ -27,7 +27,9 @@ module id(
     output reg[`RegBus]       reg1_o,       // 操作数1
     output reg[`RegBus]       reg2_o,       // 操作数2
     output reg[`RegAddrBus]   wd_o,         // 目标寄存器地址
-    output reg                wreg_o        // 是否要写回寄存器
+    output reg                wreg_o,       // 是否要写回寄存器
+
+    output wire               stallreq      // 请求暂停
 );
 
 wire[5:0] op  = inst_i[31:26];
@@ -36,6 +38,8 @@ wire[5:0] op3 = inst_i[5:0];
 wire[4:0] op4 = inst_i[20:16];
 reg[`RegBus] imm;   // 立即数
 reg instvalid;      // 指令无效，方便调试
+
+assign stallreq = `NoStop;
 
 // 控制信号
 logic reg1_imm;    // reg1是否取立即数

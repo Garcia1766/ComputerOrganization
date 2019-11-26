@@ -46,6 +46,7 @@ always_comb begin
             `EXE_SLL_OP: begin arithout <= reg2_i << reg1_i[4:0]; end
             `EXE_SRL_OP: begin arithout <= reg2_i >> reg1_i[4:0]; end
             `EXE_ADD_OP: begin arithout <= reg1_i + reg2_i; end
+            // SLT指令的部分
             // `EXE_SLT_OP, `EXE_SLTU_OP: begin
             //     arithout <= reg1_lt_reg2;
             // end
