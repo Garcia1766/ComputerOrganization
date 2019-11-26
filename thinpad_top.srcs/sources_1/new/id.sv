@@ -29,7 +29,15 @@ module id(
     output reg[`RegAddrBus]   wd_o,         // 目标寄存器地址
     output reg                wreg_o,       // 是否要写回寄存器
 
-    output wire               stallreq      // 请求暂停
+    output wire      stallreq,              // 请求暂停
+
+    input wire          is_in_delayslot_i,  // 当前指令在delay slot中
+    output reg          next_in_delayslot,  // 下一条指令在delay slot中
+    output reg          branch_flag,        // 跳转标记
+    output reg[`RegBus] branch_addr,        // 跳转地址
+    output reg[`RegBus] link_addr,          // 链接地址(jal)
+    output reg          is_in_delayslot_o   // 当前指令在delay slot中
+
 );
 
 wire[5:0] op  = inst_i[31:26];
@@ -44,6 +52,13 @@ assign stallreq = `NoStop;
 // 控制信号
 logic reg1_imm;    // reg1是否取立即数
 logic reg2_imm;    // reg2是否取立即数
+
+wire[`RegBus] pc_plus_4;
+wire[`RegBus] pc_plus_8;
+wire[`RegBus] br_offset_res;    // 跳转指令的offset的符号扩展结果
+assign pc_plus_4 = pc_i + 4;
+assign pc_plus_8 = pc_i + 8;
+assign br_offset_res = {{14{inst_i[15]}}, inst_i[15:0], 2'b0};
 
 // 译码的组合逻辑
 always_comb begin
@@ -69,6 +84,10 @@ always_comb begin
         reg1_addr_o <= inst_i[25:21];
         reg2_addr_o <= inst_i[20:16];
         imm         <= `ZeroWord;
+        link_addr   <= `ZeroWord;
+        branch_addr <= `ZeroWord;
+        branch_flag <= `NotBranch;
+        next_in_delayslot <= `NotInDelaySlot;
         case (op)
             `EXE_ORI: begin
                 wreg_o      <= `WriteEnable;          // 需要写回寄存器
@@ -141,8 +160,82 @@ always_comb begin
             //     wd_o        <= inst_i[20:16];
             //     instvalid   <= `InstValid;
             // end
+            `EXE_J: begin
+                wreg_o      <= `WriteDisable;
+                aluop_o     <= `EXE_J_OP;
+                alusel_o    <= `EXE_RES_JB;
+                reg1_imm    <= 1'b1;
+                reg2_imm    <= 1'b1;
+                branch_addr <= {pc_plus_4[31:28], inst_i[25:0], 2'b0};
+                branch_flag <= `Branch;
+                next_in_delayslot <= `InDelaySlot;
+                instvalid   <= `InstValid;
+            end
+            `EXE_JAL: begin
+                wreg_o      <= `WriteEnable;
+                aluop_o     <= `EXE_JAL_OP;
+                alusel_o    <= `EXE_RES_JB;
+                reg1_imm    <= 1'b1;
+                reg2_imm    <= 1'b1;
+                wd_o        <= 5'b11111;
+                link_addr   <= pc_plus_8;
+                branch_addr <= {pc_plus_4[31:28], inst_i[25:0], 2'b0};
+                branch_flag <= `Branch;
+                next_in_delayslot <= `InDelaySlot;
+                instvalid   <= `InstValid;
+            end
+            `EXE_BEQ: begin
+                wreg_o      <= `WriteDisable;
+                aluop_o     <= `EXE_BEQ_OP;
+                alusel_o    <= `EXE_RES_JB;
+                reg1_imm    <= 1'b0;
+                reg2_imm    <= 1'b0;
+                if (reg1_o == reg2_o) begin // mark，为什么indelayslot要分情况？
+                    branch_addr <= pc_plus_4 + br_offset_res;
+                    branch_flag <= `Branch;
+                    next_in_delayslot <= `InDelaySlot;
+                end
+                instvalid   <= `InstValid;
+            end
+            `EXE_BGTZ: begin
+                wreg_o      <= `WriteDisable;
+                aluop_o     <= `EXE_BGTZ_OP;
+                alusel_o    <= `EXE_RES_JB;
+                reg1_imm    <= 1'b0;
+                reg2_imm    <= 1'b1;
+                if ((reg1_o[31] == 1'b0) && (reg1_o != `ZeroWord)) begin // mark，为什么indelayslot要分情况？
+                    branch_addr <= pc_plus_4 + br_offset_res;
+                    branch_flag <= `Branch;
+                    next_in_delayslot <= `InDelaySlot;
+                end
+                instvalid   <= `InstValid;
+            end
+            `EXE_BNE: begin
+                wreg_o      <= `WriteDisable;
+                aluop_o     <= `EXE_BNE_OP;
+                alusel_o    <= `EXE_RES_JB;
+                reg1_imm    <= 1'b0;
+                reg2_imm    <= 1'b0;
+                if (reg1_o == reg2_o) begin // mark，为什么indelayslot要分情况？
+                    branch_addr <= pc_plus_4 + br_offset_res;
+                    branch_flag <= `Branch;
+                    next_in_delayslot <= `InDelaySlot;
+                end
+                instvalid   <= `InstValid;
+            end
             `EXE_SPECIAL: begin
                 case (op3)
+                    `EXE_JR: begin
+                        wreg_o      <= `WriteDisable;
+                        aluop_o     <= `EXE_JR_OP;
+                        alusel_o    <= `EXE_RES_JB;
+                        reg1_imm    <= 1'b0;
+                        reg2_imm    <= 1'b1;
+                        branch_addr <= reg1_o;
+                        branch_flag <= `Branch;
+                        next_in_delayslot <= `InDelaySlot;
+                        instvalid   <= `InstValid;
+                    end
                     `EXE_AND: begin
                         wreg_o      <= `WriteEnable;
                         aluop_o     <= `EXE_AND_OP;
@@ -269,6 +362,14 @@ always_comb begin
         reg2_o <= mem_wdata_i;  // 采用mem阶段的前传数据
     end else begin
         reg2_o <= reg2_data_i;  // 采用寄存器读出来的数据
+    end
+end
+
+always_comb begin
+    if (rst == `RstEnable) begin
+        is_in_delayslot_o <= `NotInDelaySlot;
+    end else begin
+        is_in_delayslot_o <= is_in_delayslot_i;
     end
 end
 

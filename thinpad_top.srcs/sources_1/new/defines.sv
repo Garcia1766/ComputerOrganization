@@ -41,6 +41,8 @@
 `define EXE_ADDU 6'b100001
 `define EXE_SLT  6'b101010
 `define EXE_SLTU 6'b101011
+`define EXE_JR   6'b001000
+
 
 // [31:26]
 `define EXE_ANDI  6'b001100
@@ -50,6 +52,12 @@
 `define EXE_ADDIU 6'b001001
 `define EXE_SLTI  6'b001010
 `define EXE_SLTIU 6'b001011
+`define EXE_J     6'b000010
+`define EXE_JAL   6'b000011
+`define EXE_BEQ   6'b000100
+`define EXE_BGTZ  6'b000111
+`define EXE_BNE   6'b000101
+
 
 `define EXE_SPECIAL  6'b000000
 `define EXE_SPECIAL2 6'b011100
@@ -68,9 +76,17 @@
 `define EXE_SLT_OP   5'b01001
 `define EXE_SLTU_OP  5'b01010
 
+`define EXE_JR_OP    5'b00001
+`define EXE_J_OP     5'b00010
+`define EXE_JAL_OP   5'b00011
+`define EXE_BEQ_OP   5'b00100
+`define EXE_BGTZ_OP  5'b00101
+`define EXE_BNE_OP   5'b00110
+
 //AluSel
 `define EXE_RES_ARITH 3'b001
 `define EXE_RES_MOVE  3'b010
+`define EXE_RES_JB    3'b011
 `define EXE_RES_NOP   3'b000
 
 //指令存储器sram

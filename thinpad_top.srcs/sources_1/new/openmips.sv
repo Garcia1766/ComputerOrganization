@@ -21,6 +21,10 @@ wire[`RegBus]       id_reg2_o;
 wire                id_wreg_o;
 wire[`RegAddrBus]   id_wd_o;
 
+wire                id_is_in_delayslot;
+wire[`RegBus]       id_link_addr;
+wire                id_next_in_delayslot;
+
 //连接ID/EX模块的输出与执行阶段EX模块的输入
 wire[`AluOpBus]     ex_aluop_i;
 wire[`AluSelBus]    ex_alusel_i;
@@ -28,6 +32,9 @@ wire[`RegBus]       ex_reg1_i;
 wire[`RegBus]       ex_reg2_i;
 wire                ex_wreg_i;
 wire[`RegAddrBus]   ex_wd_i;
+
+wire                ex_is_in_delayslot;
+wire[`RegBus]       ex_link_addr;
 
 //连接执行阶段EX模块的输出与EX/MEM模块的输入
 wire                ex_wreg_o;
@@ -58,13 +65,19 @@ wire[`RegAddrBus]   reg2_addr;
 wire[5:0] stall;
 wire stall_req_id;
 
+wire is_in_delayslot; // 从id/ex回传到id的信号
+wire[`InstAddrBus] branch_addr;
+wire branch_flag;
+
 //pc_reg例化
 pc_reg pc_reg0(
     .clk(clk),
     .rst(rst),
     .stall(stall),
     .pc(pc),
-    .ce(rom_ce_o)
+    .ce(rom_ce_o),
+    .branch_addr(branch_addr),
+    .branch_flag(branch_flag)
 );
 
 assign rom_addr_o = pc;
@@ -111,7 +124,14 @@ id id0(
     .wd_o(id_wd_o),
     .wreg_o(id_wreg_o),
 
-    .stallreq(stall_req_id)
+    .stallreq(stall_req_id),
+
+    .is_in_delayslot_i(is_in_delayslot),
+    .is_in_delayslot_o(id_is_in_delayslot),
+    .link_addr(id_link_addr),
+    .next_in_delayslot(id_next_in_delayslot),
+    .branch_addr(branch_addr),
+    .branch_flag(branch_flag)
 );
 
 //通用寄存器Regfile例化
@@ -148,7 +168,14 @@ id_ex id_ex0(
     .ex_reg1(ex_reg1_i),
     .ex_reg2(ex_reg2_i),
     .ex_wd(ex_wd_i),
-    .ex_wreg(ex_wreg_i)
+    .ex_wreg(ex_wreg_i),
+
+    .id_is_in_delayslot(id_is_in_delayslot),
+    .id_link_addr(id_link_addr),
+    .next_in_delayslot(id_next_in_delayslot),
+    .ex_is_in_delayslot(ex_is_in_delayslot),
+    .ex_link_addr(ex_link_addr),
+    .is_in_delayslot_o(is_in_delayslot)
 );
 
 //EX模块
@@ -166,7 +193,10 @@ ex ex0(
     //EX模块的输出到EX/MEM模块信息
     .wd_o(ex_wd_o),
     .wreg_o(ex_wreg_o),
-    .wdata_o(ex_wdata_o)
+    .wdata_o(ex_wdata_o),
+
+    .link_addr(ex_link_addr),
+    .is_in_delayslot(ex_is_in_delayslot)
 );
 
 //EX/MEM模块

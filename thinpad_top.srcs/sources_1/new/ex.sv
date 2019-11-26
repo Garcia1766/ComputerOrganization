@@ -13,8 +13,10 @@ module ex(
 
     output reg[`RegAddrBus] wd_o,
     output reg              wreg_o,
-    output reg[`RegBus]     wdata_o
+    output reg[`RegBus]     wdata_o,
 
+    input wire[`RegBus]     link_addr,
+    input wire              is_in_delayslot
 );
 
 // 算数&逻辑指令的结果
@@ -95,6 +97,9 @@ always_comb begin
     end
     `EXE_RES_MOVE: begin
         wdata_o <= moveres;
+    end
+    `EXE_RES_JB: begin
+        wdata_o <= link_addr;
     end
     default: begin
         wdata_o <= `ZeroWord;
