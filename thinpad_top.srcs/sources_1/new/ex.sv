@@ -26,7 +26,23 @@ module ex(
     // 解决连续两条store到同一个地址的冲突
     input wire[`AluOpBus]   last_aluop,
     input wire[`RegBus]     last_mem_addr,
-    output wire             stallreq
+    output wire             stallreq,
+
+    // 仿存阶段的指令是否要写CP0中的寄存器
+    input wire              mem_cp0_reg_we,
+    input wire[4:0]         mem_cp0_reg_write_addr,
+    input wire[`RegBus]     mem_cp0_reg_data,
+    // 回写阶段的指令是否要写CP0中的寄存器
+    input wire              wb_cp0_reg_we,
+    input wire[4:0]         wb_cp0_reg_write_addr,
+    input wire[`RegBus]     wb_cp0_reg_data,
+    // 与CP0直接相连，用于读取其中指定寄存器的值
+    output reg[4:0]         cp0_reg_read_addr_o,
+    input wire[`RegBus]     cp0_reg_data_i,
+    // 向流水线下一级传递，用于写CP0中的指定寄存器
+    output reg              cp0_reg_we_o,
+    output reg[4:0]         cp0_reg_write_addr_o,
+    output reg[`RegBus]     cp0_reg_data_o
 );
 
 wire[`RegBus] addr_o;
@@ -101,9 +117,40 @@ always_comb begin
             `EXE_MOVN_OP: begin
                 moveres <= reg1_i;
             end
+            `EXE_MFC0_OP: begin
+                //要从CP0中读取的寄存器的地址
+                cp0_reg_read_addr_o <= inst_i[15:11];
+                //读取到的CP0中指定寄存器的值
+                moveres <= cp0_reg_data_i;
+                //判断是否存在数据相关
+                if (mem_cp0_reg_we == `WriteEnable &&
+                    mem_cp0_reg_write_addr == inst_i[15:11]) begin //与仿存阶段存在数据相关
+                    moveres <= mem_cp0_reg_data;
+                end else if (wb_cp0_reg_we == `WriteEnable &&
+                            wb_cp0_reg_write_addr == inst_i[15:11]) begin //与回写阶段存在数据相关
+                    moveres <= wb_cp0_reg_data;
+                end
+            end
             default: begin
             end
         endcase
+    end
+end
+
+// 给出mtc0指令执行结果
+always_comb begin
+    if (rst == `RstEnable) begin
+        cp0_reg_write_addr_o <= 5'b00000;
+        cp0_reg_we_o         <= `WriteDisable;
+        cp0_reg_data_o       <= `ZeroWord;        
+    end else if (aluop_i == `EXE_MTC0_OP) begin
+        cp0_reg_write_addr_o <= inst_i[15:11];
+        cp0_reg_we_o         <= `WriteEnable;
+        cp0_reg_data_o       <= reg1_i;
+    end else begin
+        cp0_reg_write_addr_o <= 5'b00000;
+        cp0_reg_we_o         <= `WriteDisable;
+        cp0_reg_data_o       <= `ZeroWord;
     end
 end
 

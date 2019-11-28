@@ -94,6 +94,9 @@
 `define EXE_SB_OP    5'b10100
 `define EXE_SW_OP    5'b10101
 
+`define EXE_MFC0_OP  5'b10110
+`define EXE_MTC0_OP  5'b10111
+
 //AluSel
 `define EXE_RES_ARITH 3'b001
 `define EXE_RES_MOVE  3'b010
@@ -114,3 +117,15 @@
 `define RegNum          32
 `define RegNumLog2      5
 `define NOPRegAddr      5'b00000
+
+//CP0
+`define CP0_REG_COUNT   5'b01001
+`define CP0_REG_COMPARE 5'b01011
+`define CP0_REG_STATUS  5'b01100
+`define CP0_REG_CAUSE   5'b01101
+`define CP0_REG_EPC     5'b01110
+`define CP0_REG_PRId    5'b01111
+`define CP0_REG_CONFIG  5'b10000
+
+`define InterruptAssert     1'b1
+`define InterruptNotAssert  1'b0

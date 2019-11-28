@@ -6,3 +6,4 @@ vivado.*
 *.ip_user_files/
 *.sim/
 *.wcfg
+xvlog.*
