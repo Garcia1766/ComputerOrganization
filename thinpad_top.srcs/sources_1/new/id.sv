@@ -40,7 +40,11 @@ module id(
 
     output wire[`RegBus] inst_o,            // 向后传递指令
 
-    input wire[`AluOpBus] ex_aluop          // 执行阶段的指令，解决load数据相关
+    input wire[`AluOpBus] ex_aluop,         // 执行阶段的指令，解决load数据相关
+
+    //新增的输出接口
+    output wire[31:0]       excepttype_o,
+    output wire[`RegBus]    current_inst_address_o
 );
 
 wire[5:0] op  = inst_i[31:26];
@@ -71,6 +75,14 @@ wire last_is_load;
 assign stallreq = reg1_loadrelate | reg2_loadrelate;
 assign last_is_load = ((ex_aluop == `EXE_LB_OP) || (ex_aluop == `EXE_LH_OP) || (ex_aluop == `EXE_LW_OP)) ? 1'b1 : 1'b0;
 
+//异常相关
+reg excepttype_is_syscall;
+reg excepttype_is_eret;
+//excepttype_o的低8位留给外部中断，第8位表示是否是syscall指令引起的异常，第9位表示是否是无效指令引起的异常，第12位表示是否是eret指令
+assign excepttype_o = {19'b0, excepttype_is_eret, 2'b0, instvalid, excepttype_is_syscall, 8'b0};
+//pc_i就是当前处于译码阶段的指令地址
+assign current_inst_address_o = pc_i;
+
 // 译码的组合逻辑
 always_comb begin
     if (rst == `RstEnable) begin
@@ -99,6 +111,10 @@ always_comb begin
         branch_addr <= `ZeroWord;
         branch_flag <= `NotBranch;
         next_in_delayslot <= `NotInDelaySlot;
+        
+        excepttype_is_syscall   <= `False_v;
+        excepttype_is_eret      <= `False_v;
+        instvalid               <= `InstInvalid;
         case (op)
             `EXE_ORI: begin
                 wreg_o      <= `WriteEnable;          // 需要写回寄存器
@@ -365,10 +381,19 @@ always_comb begin
                     //     reg2_imm    <= 1'b0;
                     //     instvalid   <= `InstValid;
                     // end
+                    `EXE_SYSCALL: begin
+                        wreg_o      <= `WriteDisable;
+                        aluop_o     <= `EXE_SYSCALL_OP;
+                        alusel_o    <= `EXE_RES_NOP;
+                        reg1_imm    <= 1'b1;
+                        reg2_imm    <= 1'b1;
+                        instvalid   <= `InstValid;
+                        excepttype_is_syscall   <= `True_v;
+                    end
                     default: begin
                     end
                 endcase
-            end
+            end  //`EXE_SPECIAL
             `EXE_SPECIAL2: begin
                 case (op3)
                     `EXE_CLZ: begin
@@ -399,6 +424,14 @@ always_comb begin
             alusel_o    <= `EXE_RES_MOVE;
             wreg_o      <= `WriteDisable;
             reg1_addr_o <= inst_i[20:16];
+        end else if (inst_i == `EXE_ERET) begin //eret
+            wreg_o      <= `WriteDisable;
+            aluop_o     <= `EXE_ERET;
+            alusel_o    <= `EXE_RES_NOP;
+            reg1_imm    <= 1'b1;
+            reg2_imm    <= 1'b1;
+            instvalid   <= `InstValid;
+            excepttype_is_eret  <= `True_v;
         end
     end    //if
 end    //always

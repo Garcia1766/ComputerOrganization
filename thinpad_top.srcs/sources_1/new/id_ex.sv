@@ -30,7 +30,14 @@ module id_ex(
     output reg[`RegBus]     ex_link_addr,
 
     input wire[`RegBus]     id_inst,    // 向后传递指令
-    output reg[`RegBus]     ex_inst
+    output reg[`RegBus]     ex_inst,
+
+    //异常相关
+    input wire              flush,
+    input wire[`RegBus]     id_current_inst_address,
+    input wire[31:0]        id_excepttype,
+    output reg[`RegBus]     ex_current_inst_address,
+    output reg[31:0]        ex_excepttype
 );
 
 always_ff @ (posedge clk) begin
@@ -45,6 +52,22 @@ always_ff @ (posedge clk) begin
         ex_is_in_delayslot <= `NotInDelaySlot;
         is_in_delayslot_o  <= `NotInDelaySlot;
         ex_inst   <= `ZeroWord;
+
+        ex_excepttype   <= `ZeroWord;
+        ex_current_inst_address <= `ZeroWord;
+    end else if (flush == 1'b1) begin
+        ex_aluop  <= `EXE_NOP_OP;
+        ex_alusel <= `EXE_RES_NOP;
+        ex_reg1   <= `ZeroWord;
+        ex_reg2   <= `ZeroWord;
+        ex_wd     <= `NOPRegAddr;
+        ex_wreg   <= `WriteDisable;
+        ex_link_addr <= `ZeroWord;
+        ex_inst   <= `ZeroWord;
+        ex_is_in_delayslot <= `NotInDelaySlot;
+        is_in_delayslot_o  <= `NotInDelaySlot;
+        ex_excepttype           <= `ZeroWord;
+        ex_current_inst_address <= `ZeroWord;
     end else if (stall[2] == `Stop && stall[3] == `NoStop) begin
         ex_aluop  <= `EXE_NOP_OP;
         ex_alusel <= `EXE_RES_NOP;
@@ -55,6 +78,8 @@ always_ff @ (posedge clk) begin
         ex_link_addr <= `ZeroWord;
         ex_is_in_delayslot <= `NotInDelaySlot;
         ex_inst   <= `ZeroWord;
+        ex_excepttype           <= `ZeroWord;
+        ex_current_inst_address <= `ZeroWord;
     end else if (stall[2] == `NoStop) begin
         ex_aluop  <= id_aluop;
         ex_alusel <= id_alusel;
@@ -66,6 +91,8 @@ always_ff @ (posedge clk) begin
         ex_is_in_delayslot <= id_is_in_delayslot;
         is_in_delayslot_o <= next_in_delayslot;
         ex_inst   <= id_inst;
+        ex_excepttype           <= id_excepttype;
+        ex_current_inst_address <= id_current_inst_address;
     end
 end
 

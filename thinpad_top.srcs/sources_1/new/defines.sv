@@ -43,6 +43,9 @@
 `define EXE_SLTU 6'b101011
 `define EXE_JR   6'b001000
 
+//异常相关
+`define EXE_SYSCALL 6'b001100
+`define EXE_ERET    32'b01000010000000000000000000011000
 
 // [31:26]
 `define EXE_ANDI  6'b001100
@@ -96,6 +99,8 @@
 
 `define EXE_MFC0_OP  5'b10110
 `define EXE_MTC0_OP  5'b10111
+`define EXE_SYSCALL_OP 5'b11000
+`define EXE_ERET_OP  5'b11001
 
 //AluSel
 `define EXE_RES_ARITH 3'b001
