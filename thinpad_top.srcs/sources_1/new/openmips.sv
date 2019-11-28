@@ -13,7 +13,11 @@ module openmips(
     output wire[`RegBus] ram_data_o,
     output wire          ram_we_o,
     output wire[3:0]     ram_sel_o,
-    output wire[3:0]     ram_ce_o
+    output wire[3:0]     ram_ce_o,
+
+    //CP0相关
+    input wire[5:0]      int_i,
+    output wire          timer_int_o
 );
 
 wire[`InstAddrBus]  pc;
@@ -47,21 +51,33 @@ wire[`RegBus]       ex_link_addr;
 wire                ex_wreg_o;
 wire[`RegAddrBus]   ex_wd_o;
 wire[`RegBus]       ex_wdata_o;
+wire                ex_cp0_reg_we_o;
+wire[4:0]           ex_cp0_reg_write_addr_o;
+wire[`RegBus]       ex_cp0_reg_data_o; 
 
 //连接EX/MEM模块的输出与访存阶段MEM模块的输入
 wire                mem_wreg_i;
 wire[`RegAddrBus]   mem_wd_i;
 wire[`RegBus]       mem_wdata_i;
+wire                mem_cp0_reg_we_i;
+wire[4:0]           mem_cp0_reg_write_addr_i;
+wire[`RegBus]       mem_cp0_reg_data_i;
 
 //连接访存阶段MEM模块的输出与MEM/WB模块的输入
 wire                mem_wreg_o;
 wire[`RegAddrBus]   mem_wd_o;
 wire[`RegBus]       mem_wdata_o;
+wire                mem_cp0_reg_we_o;
+wire[4:0]           mem_cp0_reg_write_addr_o;
+wire[`RegBus]       mem_cp0_reg_data_o;
 
 //连接MEM/WB模块的输出与回写阶段的输入
 wire                wb_wreg_i;
 wire[`RegAddrBus]   wb_wd_i;
 wire[`RegBus]       wb_wdata_i;
+wire                wb_cp0_reg_we_i;
+wire[4:0]           wb_cp0_reg_write_addr_i;
+wire[`RegBus]       wb_cp0_reg_data_i;
 
 //连接译码阶段ID模块与通用寄存器Regfile模块
 wire[`RegBus]       reg1_data;
@@ -86,6 +102,10 @@ wire[`RegBus]    ex_reg2_o;
 wire[`AluOpBus]   mem_aluop_o;
 wire[`RegBus]     mem_mem_addr_o;
 wire[`RegBus]     mem_reg2_o;
+
+//直接连接EX模块与CP0的两根线，mfc0指令
+wire[`RegBus]   cp0_data_o;
+wire[4:0]       cp0_raddr_i;
 
 wire mem_ce;
 assign ram_ce_o = mem_ce;
@@ -233,7 +253,23 @@ ex ex0(
 
     .last_aluop(mem_aluop_o),
     .last_mem_addr(mem_mem_addr_o),
-    .stallreq(stall_req_ex)
+    .stallreq(stall_req_ex),
+
+    //访存阶段的指令是否要写CP0
+    .mem_cp0_reg_we(mem_cp0_reg_we_o),
+    .mem_cp0_reg_write_addr(mem_cp0_reg_write_addr_o),
+    .mem_cp0_reg_data(mem_cp0_reg_data_o),
+    //回写阶段的指令是否要写CP0
+    .wb_cp0_reg_we(wb_cp0_reg_we_i),
+    .wb_cp0_reg_write_addr(wb_cp0_reg_write_addr_i),
+    .wb_cp0_reg_data(wb_cp0_reg_data_i),
+    //读CP0中寄存器，直接与CP0相连
+    .cp0_reg_data_i(cp0_data_o),
+	.cp0_reg_read_addr_o(cp0_raddr_i),
+    //向EX/MEM模块传递，用于写CP0中的寄存器
+    .cp0_reg_we_o(ex_cp0_reg_we_o),
+	.cp0_reg_write_addr_o(ex_cp0_reg_write_addr_o),
+	.cp0_reg_data_o(ex_cp0_reg_data_o)
 );
 
 //EX/MEM模块
@@ -257,7 +293,15 @@ ex_mem ex_mem0(
     .ex_reg2(ex_reg2_o),
     .mem_aluop(mem_aluop_o),
     .mem_mem_addr(mem_mem_addr_o),
-    .mem_reg2(mem_reg2_o)
+    .mem_reg2(mem_reg2_o),
+
+    //CP0相关信号
+    .ex_cp0_reg_we(ex_cp0_reg_we_o),
+	.ex_cp0_reg_write_addr(ex_cp0_reg_write_addr_o),
+	.ex_cp0_reg_data(ex_cp0_reg_data_o),
+    .mem_cp0_reg_we(mem_cp0_reg_we_i),
+	.mem_cp0_reg_write_addr(mem_cp0_reg_write_addr_i),
+	.mem_cp0_reg_data(mem_cp0_reg_data_i)
 );
 
 //MEM模块例化
@@ -283,7 +327,15 @@ mem mem0(
     .mem_we_o(ram_we_o),
     .mem_sel_o(ram_sel_o),
     .mem_data_o(ram_data_o),
-    .mem_ce_o(mem_ce)
+    .mem_ce_o(mem_ce),
+
+    //cp0相关信号
+    .cp0_reg_we_i(mem_cp0_reg_we_i),
+	.cp0_reg_write_addr_i(mem_cp0_reg_write_addr_i),
+	.cp0_reg_data_i(mem_cp0_reg_data_i),
+    .cp0_reg_we_o(mem_cp0_reg_we_o),
+	.cp0_reg_write_addr_o(mem_cp0_reg_write_addr_o),
+	.cp0_reg_data_o(mem_cp0_reg_data_o)
 );
 
 //MEM/WB模块
@@ -301,7 +353,15 @@ mem_wb mem_wb0(
     //送到回写阶段的信息
     .wb_wd(wb_wd_i),
     .wb_wreg(wb_wreg_i),
-    .wb_wdata(wb_wdata_i)
+    .wb_wdata(wb_wdata_i),
+
+    //CP0相关信号
+    .mem_cp0_reg_we(mem_cp0_reg_we_o),
+	.mem_cp0_reg_write_addr(mem_cp0_reg_write_addr_o),
+	.mem_cp0_reg_data(mem_cp0_reg_data_o),
+    .wb_cp0_reg_we(wb_cp0_reg_we_i),
+	.wb_cp0_reg_write_addr(wb_cp0_reg_write_addr_i),
+	.wb_cp0_reg_data(wb_cp0_reg_data_i)
 );
 
 ctrl ctrl0(
@@ -310,6 +370,25 @@ ctrl ctrl0(
     .stall_req_ex(stall_req_ex),
     .stall(stall),
     .mem_ce(mem_ce)
+);
+
+cp0_reg cp0_reg0(
+    .clk(clk),
+    .rst(rst),
+    
+    .raddr_i(cp0_raddr_i),
+    .we_i(wb_cp0_reg_we_i),
+    .waddr_i(wb_cp0_reg_write_addr_i),
+    .data_i(wb_cp0_reg_data_i),
+    
+    //.excepttype_i(mem_excepttype_o),
+    .int_i(int_i),
+    //.current_inst_addr_i(mem_current_inst_address_o),
+    //.is_in_delayslot_i(mem_is_in_delayslot_o),
+    
+    .data_o(cp0_data_o),
+    
+    .timer_int_o(timer_int_o)  			
 );
 
 endmodule

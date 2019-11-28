@@ -22,7 +22,15 @@ module mem(
     output reg              mem_we_o,
     output reg[3:0]         mem_sel_o,
     output reg[`RegBus]     mem_data_o,
-    output reg              mem_ce_o
+    output reg              mem_ce_o,
+
+    //cp0相关信号
+    input wire              cp0_reg_we_i,
+    input wire[4:0]         cp0_reg_write_addr_i,
+    input wire[`RegBus]     cp0_reg_data_i,
+    output reg              cp0_reg_we_o,
+    output reg[4:0]         cp0_reg_write_addr_o,
+    output reg[`RegBus]     cp0_reg_data_o
 );
 
 always_comb begin
@@ -35,6 +43,9 @@ always_comb begin
         mem_sel_o <= 4'b0000;
         mem_data_o <= `ZeroWord;
         mem_ce_o <= `ChipDisable;
+        cp0_reg_we_o <= `WriteDisable;
+        cp0_reg_write_addr_o <= 5'b00000;
+        cp0_reg_data_o <= `ZeroWord;
     end else begin
         wd_o    <= wd_i;
         wreg_o  <= wreg_i;
@@ -44,6 +55,10 @@ always_comb begin
         mem_sel_o <= 4'b1111;
         mem_ce_o <= `ChipDisable;
         mem_data_o <= `ZeroWord;
+        //将对CP0中寄存器的写信息传递到流水线下一级
+        cp0_reg_we_o <= cp0_reg_we_i;
+        cp0_reg_write_addr_o <= cp0_reg_write_addr_i;
+        cp0_reg_data_o <= cp0_reg_data_i;
         case (aluop_i)
             `EXE_LB_OP: begin
                 mem_addr_o <= mem_addr_i;
