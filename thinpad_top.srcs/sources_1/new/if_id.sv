@@ -17,7 +17,7 @@ always_ff @ (posedge clk) begin
         id_inst <= `ZeroWord;
     end else if (stall[1] == `NoStop) begin      // 小端序转换成大端序
         id_pc <= if_pc;
-        id_inst <= {if_inst[7:0], if_inst[15:8], if_inst[23:16], if_inst[31:24]};
+        id_inst <= if_inst;
     end
 end
 
