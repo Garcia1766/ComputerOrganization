@@ -1,7 +1,7 @@
 //全局
 `define RstEnable           1'b1
 `define RstDisable          1'b0
-`define ZeroWord            32'h00000000
+`define ZeroWord            32'b0
 `define WriteEnable         1'b1
 `define WriteDisable        1'b0
 `define ReadEnable          1'b1
@@ -58,6 +58,11 @@
 `define EXE_BGTZ  6'b000111
 `define EXE_BNE   6'b000101
 
+`define EXE_LB    6'b100000
+`define EXE_LH    6'b100001
+`define EXE_LW    6'b100011
+`define EXE_SB    6'b101000
+`define EXE_SW    6'b101011
 
 `define EXE_SPECIAL  6'b000000
 `define EXE_SPECIAL2 6'b011100
@@ -76,17 +81,24 @@
 `define EXE_SLT_OP   5'b01001
 `define EXE_SLTU_OP  5'b01010
 
-`define EXE_JR_OP    5'b00001
-`define EXE_J_OP     5'b00010
-`define EXE_JAL_OP   5'b00011
-`define EXE_BEQ_OP   5'b00100
-`define EXE_BGTZ_OP  5'b00101
-`define EXE_BNE_OP   5'b00110
+`define EXE_JR_OP    5'b01011
+`define EXE_J_OP     5'b01100
+`define EXE_JAL_OP   5'b01101
+`define EXE_BEQ_OP   5'b01110
+`define EXE_BGTZ_OP  5'b01111
+`define EXE_BNE_OP   5'b10000
+
+`define EXE_LB_OP    5'b10001
+`define EXE_LH_OP    5'b10010
+`define EXE_LW_OP    5'b10011
+`define EXE_SB_OP    5'b10100
+`define EXE_SW_OP    5'b10101
 
 //AluSel
 `define EXE_RES_ARITH 3'b001
 `define EXE_RES_MOVE  3'b010
 `define EXE_RES_JB    3'b011
+`define EXE_RES_LS    3'b100
 `define EXE_RES_NOP   3'b000
 
 //指令存储器sram

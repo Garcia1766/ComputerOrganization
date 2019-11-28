@@ -16,12 +16,32 @@ module ex(
     output reg[`RegBus]     wdata_o,
 
     input wire[`RegBus]     link_addr,
-    input wire              is_in_delayslot
+    input wire              is_in_delayslot,
+
+    input wire[`RegBus]     inst_i,
+    output wire[`AluOpBus]  aluop_o,
+    output wire[`RegBus]    mem_addr_o,
+    output wire[`RegBus]    reg2_o,
+
+    // 解决连续两条store到同一个地址的冲突
+    input wire[`AluOpBus]   last_aluop,
+    input wire[`RegBus]     last_mem_addr,
+    output wire             stallreq
 );
+
+wire[`RegBus] addr_o;
+assign aluop_o = aluop_i;
+assign addr_o = reg1_i + {{16{inst_i[15]}}, inst_i[15:0]};
+assign mem_addr_o = addr_o;
+assign reg2_o = reg2_i;
 
 // 算数&逻辑指令的结果
 reg[`RegBus] arithout;
 reg[`RegBus] moveres;
+
+assign stallreq = (((last_aluop == `EXE_SB_OP) || (last_aluop == `EXE_SW_OP)) &&
+                    ((aluop_i == `EXE_SB_OP) || (aluop_i == `EXE_SW_OP)) &&
+                    (addr_o[23:2] == last_mem_addr[23:2])) ? 1'b1 : 1'b0;
 
 // slt相关的逻辑，留作备考
 // // 一些中间结果

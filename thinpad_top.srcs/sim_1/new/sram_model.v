@@ -91,16 +91,16 @@ reg   [19:0] Address_read1,Address_read2 ;
 reg   initiate_read1,initiate_read2;
 
 wire[7:0] test_mem[9:0];
-assign test_mem[0] = mem_array0[0];
-assign test_mem[1] = mem_array0[1];
-assign test_mem[2] = mem_array0[2];
-assign test_mem[3] = mem_array0[3];
-assign test_mem[4] = mem_array0[4];
-assign test_mem[5] = mem_array0[5];
-assign test_mem[6] = mem_array0[6];
-assign test_mem[7] = mem_array0[7];
-assign test_mem[8] = mem_array0[8];
-assign test_mem[9] = mem_array0[9];
+assign test_mem[0] = mem_array0[64];
+assign test_mem[1] = mem_array1[64];
+assign test_mem[2] = mem_array0[65];
+assign test_mem[3] = mem_array1[65];
+assign test_mem[4] = mem_array0[66];
+assign test_mem[5] = mem_array1[66];
+assign test_mem[6] = mem_array0[67];
+assign test_mem[7] = mem_array1[67];
+assign test_mem[8] = mem_array0[68];
+assign test_mem[9] = mem_array1[68];
 
 //Intializing values
 

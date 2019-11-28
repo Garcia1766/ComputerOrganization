@@ -36,8 +36,11 @@ module id(
     output reg          branch_flag,        // 跳转标记
     output reg[`RegBus] branch_addr,        // 跳转地址
     output reg[`RegBus] link_addr,          // 链接地址(jal)
-    output reg          is_in_delayslot_o   // 当前指令在delay slot中
+    output reg          is_in_delayslot_o,  // 当前指令在delay slot中
 
+    output wire[`RegBus] inst_o,            // 向后传递指令
+
+    input wire[`AluOpBus] ex_aluop          // 执行阶段的指令，解决load数据相关
 );
 
 wire[5:0] op  = inst_i[31:26];
@@ -46,8 +49,6 @@ wire[5:0] op3 = inst_i[5:0];
 wire[4:0] op4 = inst_i[20:16];
 reg[`RegBus] imm;   // 立即数
 reg instvalid;      // 指令无效，方便调试
-
-assign stallreq = `NoStop;
 
 // 控制信号
 logic reg1_imm;    // reg1是否取立即数
@@ -59,6 +60,16 @@ wire[`RegBus] br_offset_res;    // 跳转指令的offset的符号扩展结果
 assign pc_plus_4 = pc_i + 4;
 assign pc_plus_8 = pc_i + 8;
 assign br_offset_res = {{14{inst_i[15]}}, inst_i[15:0], 2'b0};
+
+assign inst_o = inst_i;
+
+// 解决load数据相关中间信号
+reg reg1_loadrelate;
+reg reg2_loadrelate;
+wire last_is_load;
+
+assign stallreq = reg1_loadrelate | reg2_loadrelate;
+assign last_is_load = ((ex_aluop == `EXE_LB_OP) || (ex_aluop == `EXE_LH_OP) || (ex_aluop == `EXE_LW_OP)) ? 1'b1 : 1'b0;
 
 // 译码的组合逻辑
 always_comb begin
@@ -216,11 +227,54 @@ always_comb begin
                 alusel_o    <= `EXE_RES_JB;
                 reg1_imm    <= 1'b0;
                 reg2_imm    <= 1'b0;
-                if (reg1_o == reg2_o) begin // mark，为什么indelayslot要分情况？
+                if (reg1_o != reg2_o) begin // mark，为什么indelayslot要分情况？
                     branch_addr <= pc_plus_4 + br_offset_res;
                     branch_flag <= `Branch;
                     next_in_delayslot <= `InDelaySlot;
                 end
+                instvalid   <= `InstValid;
+            end
+            `EXE_LB: begin
+                wreg_o      <= `WriteEnable;
+                aluop_o     <= `EXE_LB_OP;
+                alusel_o    <= `EXE_RES_LS;
+                reg1_imm    <= 1'b0;
+                reg2_imm    <= 1'b1;
+                wd_o        <= inst_i[20:16];
+                instvalid   <= `InstValid;
+            end
+            `EXE_LH: begin
+                wreg_o      <= `WriteEnable;
+                aluop_o     <= `EXE_LH_OP;
+                alusel_o    <= `EXE_RES_LS;
+                reg1_imm    <= 1'b0;
+                reg2_imm    <= 1'b1;
+                wd_o        <= inst_i[20:16];
+                instvalid   <= `InstValid;
+            end
+            `EXE_LW: begin
+                wreg_o      <= `WriteEnable;
+                aluop_o     <= `EXE_LW_OP;
+                alusel_o    <= `EXE_RES_LS;
+                reg1_imm    <= 1'b0;
+                reg2_imm    <= 1'b1;
+                wd_o        <= inst_i[20:16];
+                instvalid   <= `InstValid;
+            end
+            `EXE_SB: begin
+                wreg_o      <= `WriteDisable;
+                aluop_o     <= `EXE_SB_OP;
+                alusel_o    <= `EXE_RES_LS;
+                reg1_imm    <= 1'b0;
+                reg2_imm    <= 1'b0;
+                instvalid   <= `InstValid;
+            end
+            `EXE_SW: begin
+                wreg_o      <= `WriteDisable;
+                aluop_o     <= `EXE_SW_OP;
+                alusel_o    <= `EXE_RES_LS;
+                reg1_imm    <= 1'b0;
+                reg2_imm    <= 1'b0;
                 instvalid   <= `InstValid;
             end
             `EXE_SPECIAL: begin
@@ -337,10 +391,13 @@ end    //always
 
 // 操作数1输出选择
 always_comb begin
+    reg1_loadrelate <= `NoStop;
     if(rst == `RstEnable) begin
         reg1_o <= `ZeroWord;    // 复位时的值
     end else if (reg1_imm == 1'b1) begin
         reg1_o <= imm;
+    end else if ((last_is_load == 1'b1) && (ex_wd_i == reg1_addr_o)) begin
+        reg1_loadrelate <= `Stop;
     end else if((ex_wreg_i == 1'b1) && (ex_wd_i == reg1_addr_o)) begin
         reg1_o <= ex_wdata_i;   // 采用ex阶段的前传数据
     end else if((mem_wreg_i == 1'b1) && (mem_wd_i == reg1_addr_o)) begin
@@ -356,6 +413,8 @@ always_comb begin
         reg2_o <= `ZeroWord;    // 复位时的值
     end else if(reg2_imm == 1'b1) begin
         reg2_o <= imm;          // 采用立即数
+    end else if ((last_is_load == 1'b1) && (ex_wd_i == reg2_addr_o)) begin
+        reg2_loadrelate <= `Stop;
     end else if((ex_wreg_i == 1'b1) && (ex_wd_i == reg2_addr_o)) begin
         reg2_o <= ex_wdata_i;   // 采用ex阶段的前传数据
     end else if((mem_wreg_i == 1'b1) && (mem_wd_i == reg2_addr_o)) begin

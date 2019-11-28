@@ -1,4 +1,5 @@
 `default_nettype none
+`include "defines.sv"
 
 module thinpad_top(
     input wire clk_50M,           //50MHz 时钟输入
@@ -211,77 +212,113 @@ module thinpad_top(
 // );
 // /* =========== Demo code end =========== */
 
+assign uart_rdn = 1'b1;
+assign uart_wrn = 1'b1;
 
-assign ext_ram_ce_n = 1'b1;
-assign ext_ram_oe_n = 1'b1;
-assign ext_ram_we_n = 1'b1;
+wire[`RegBus] inst_data;
+wire[`RegBus] inst_addr;
+wire inst_ce;
+wire[`RegBus] ram_data_i;
+wire[`RegBus] ram_addr;
+wire[`RegBus] ram_data_o;
+wire          ram_we;
+wire[3:0]     ram_sel;
+wire[3:0]     ram_ce;
 
-assign base_ram_ce_n = 1'b0;
-assign base_ram_be_n = 4'b0;
+wire              sram1_ce;
+wire              sram1_we;
+wire[19:0]        sram1_addr;
+wire[`InstBus]    sram1_data_i;
+wire[3:0]         sram1_sel;
+wire[`InstBus]    sram1_data_o;
 
-enum logic[2:0] {RECEIVE, WRITE, TRANSMIT, WAIT_TBRE, WAIT_TSRE, PULL_WRN, IDLE} state;
+wire              sram2_ce;
+wire              sram2_we;
+wire[19:0]        sram2_addr;
+wire[`InstBus]    sram2_data_i;
+wire[3:0]         sram2_sel;
+wire[`InstBus]    sram2_data_o;
 
-logic[3:0] cnt;
+openmips mips0(
+    .clk(clk_11M0592),
+    .rst(reset_btn),
 
-always_ff @(posedge clk_11M0592 or posedge reset_btn) begin
-    if(reset_btn) begin
-        base_ram_addr <= dip_sw[19:0];
-        cnt <= 0;
-        base_ram_oe_n <= 1;
-        base_ram_we_n <= 1;
-        uart_rdn <= 1;
-        uart_wrn <= 1;
-        state <= RECEIVE;
-    end else begin
-        case (state)
-            RECEIVE: begin
-                if (uart_dataready) begin
-                    base_ram_we_n <= 0;
-                    uart_rdn <= 0;
-                    state <= WRITE;
-                end
-            end
-            WRITE: begin
-                uart_rdn <= 1;
-                base_ram_we_n <= 1;
-                if (cnt == 4'b1001) begin
-                    base_ram_addr <= base_ram_addr - 9;
-                    cnt <= 0;
-                    base_ram_oe_n <= 0;
-                    state <= TRANSMIT;
-                end else begin
-                    base_ram_addr <= base_ram_addr + 1;
-                    cnt <= cnt+1;
-                    state <= RECEIVE;
-                end
-            end
-            TRANSMIT: begin
-                uart_wrn <= 0;
-                state <= PULL_WRN;
-            end
-            PULL_WRN: begin
-                uart_wrn <= 1;
-                state <= WAIT_TBRE;
-            end
-            WAIT_TBRE: begin
-                if (uart_tbre) begin
-                    state <= WAIT_TSRE;
-                end
-            end
-            WAIT_TSRE: begin
-                if (uart_tsre) begin
-                    if (cnt == 9) begin
-                        state <= IDLE;
-                    end else begin
-                        base_ram_addr <= base_ram_addr + 1;
-                        cnt <= cnt + 1;
-                        state <= TRANSMIT;
-                    end
-                end
-            end
-            default : /* default */;
-        endcase
-    end
-end
+    .inst_data_i(inst_data),
+    .inst_addr_o(inst_addr),
+    .inst_ce_o(inst_ce),
+
+    .ram_data_i(ram_data_i),
+    .ram_addr_o(ram_addr),
+    .ram_data_o(ram_data_o),
+    .ram_we_o(ram_we),
+    .ram_sel_o(ram_sel),
+    .ram_ce_o(ram_ce)
+);
+
+bus_ctrl bus0(
+    .clk(clk_11M0592),
+    .rst(reset_btn),
+
+    .if_ce_i(inst_ce),
+    .if_addr_i(inst_addr),
+    .if_data_o(inst_data),
+
+    .mem_ce_i(ram_ce),
+    .mem_data_i(ram_data_o),
+    .mem_addr_i(ram_addr),
+    .mem_we_i(ram_we),
+    .mem_sel_i(ram_sel),
+    .mem_data_o(ram_data_i),
+
+    .sram1_ce_o(sram1_ce),
+    .sram1_we_o(sram1_we),
+    .sram1_addr_o(sram1_addr),
+    .sram1_data_o(sram1_data_o),
+    .sram1_sel_o(sram1_sel),
+    .sram1_data_i(sram1_data_i),
+
+    .sram2_ce_o(sram2_ce),
+    .sram2_we_o(sram2_we),
+    .sram2_addr_o(sram2_addr),
+    .sram2_data_o(sram2_data_o),
+    .sram2_sel_o(sram2_sel),
+    .sram2_data_i(sram2_data_i)
+);
+
+sram_ctrl sram1(
+    // 面向cpu的接口
+    .addr_i(sram1_addr),
+    .data_i(sram1_data_o),
+    .ce_i(sram1_ce),
+    .we_i(sram1_we),
+    .sel_i(sram1_sel),
+    .data_o(sram1_data_i),
+
+    // 面向sram的接口
+    .sram_data(base_ram_data),
+    .sram_addr(base_ram_addr),
+    .sram_ce_n(base_ram_ce_n),
+    .sram_oe_n(base_ram_oe_n),
+    .sram_we_n(base_ram_we_n),
+    .sram_be_n(base_ram_be_n)
+);
+
+sram_ctrl sram2(
+    // 面向cpu的接口
+    .addr_i(sram2_addr),
+    .data_i(sram2_data_o),
+    .ce_i(sram2_ce),
+    .we_i(sram2_we),
+    .sel_i(sram2_sel),
+    .data_o(sram2_data_i),
+
+    // 面向sram的接口
+    .sram_data(ext_ram_data),
+    .sram_addr(ext_ram_addr),
+    .sram_ce_n(ext_ram_ce_n),
+    .sram_oe_n(ext_ram_oe_n),
+    .sram_we_n(ext_ram_we_n),
+    .sram_be_n(ext_ram_be_n)
+);
 
 endmodule

@@ -4,13 +4,14 @@ module pc_reg(
     input wire clk,
     input wire rst,
 
-    input wire branch_flag,
-    input wire[`RegBus] branch_addr,
-
     input wire[5:0] stall,
 
     output reg[`InstAddrBus] pc,
-    output reg ce
+    output reg ce,
+
+    input wire branch_flag,
+    input wire[`RegBus] branch_addr
+
 );
 
 always_ff @ (posedge clk) begin
