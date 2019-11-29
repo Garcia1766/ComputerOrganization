@@ -47,7 +47,7 @@ reg[`InstBus]       sram_data_i;    //从sram读出的数据
 reg                 sram_no;        //0--baseram, 1--extraram
 
 reg[31:0] uart_data_buff;
-assign uart_data = uart_wrn ? 32'bz:uart_data_buff;
+assign uart_data = ((rst == `RstDisable) && (mem_ce_i == 1'b1) && (mem_addr_i == 32'hBFD003F8) && (mem_we_i == 1'b1)) ? uart_data_buff : 32'bz;
 
 always_comb begin
     if_data_o   <= `ZeroWord;
@@ -67,7 +67,11 @@ always_comb begin
         if (mem_ce_i == 1'b1) begin
             if (mem_addr_i == 32'hBFD003F8) begin // UART串口
                 if (mem_we_i == 1'b1) begin //写串口
-                    uart_wrn <= 1'b0;
+                    if (clk == 1'b0) begin
+                        uart_wrn <= 1'b0;
+                    end else begin
+                        uart_wrn <= 1'b1;
+                    end
                     uart_data_buff <= mem_data_i;
                 end else begin    //读串口
                     uart_rdn <= 1'b0;
