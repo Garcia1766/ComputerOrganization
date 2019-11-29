@@ -4,6 +4,8 @@ module regfile(
     input wire clk,
     input wire rst,
 
+    output wire[15:0] reg1,
+
     //写端口
     input wire              we,
     input wire[`RegAddrBus] waddr,
@@ -20,6 +22,8 @@ module regfile(
 );
 
 reg[`RegBus] regs[0:`RegNum-1];
+
+assign reg1 = regs[1][15:0];
 
 // 寄存器写回，唯一的时序逻辑，对应流水线第五阶段的写回
 always_ff @ (posedge clk) begin

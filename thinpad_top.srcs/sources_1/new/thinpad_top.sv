@@ -240,12 +240,14 @@ wire          ram_ce;
 // wire[`InstBus]    sram2_data_o;
 
 openmips mips0(
-    .clk(clk_11M0592),
+    .clk(clock_btn),
     .rst(reset_btn),
 
     .inst_data_i(inst_data),
     .inst_addr_o(inst_addr),
     .inst_ce_o(inst_ce),
+
+    .reg1(leds),
 
     .ram_data_i(ram_data_i),
     .ram_addr_o(ram_addr),
@@ -256,7 +258,7 @@ openmips mips0(
 );
 
 bus_ctrl bus0(
-    .clk(clk_11M0592),
+    .clk(clock_btn),
     .rst(reset_btn),
 
     .if_ce_i(inst_ce),

@@ -8,6 +8,8 @@ module openmips(
     output wire[`RegBus] inst_addr_o,
     output wire          inst_ce_o,
 
+    output wire[15:0] reg1,
+
     input wire[`RegBus]  ram_data_i,
     output wire[`RegBus] ram_addr_o,
     output wire[`RegBus] ram_data_o,
@@ -163,6 +165,9 @@ id id0(
 regfile regfile1(
     .clk (clk),
     .rst (rst),
+
+    .reg1(reg1),
+
     .we    (wb_wreg_i),
     .waddr (wb_wd_i),
     .wdata (wb_wdata_i),
