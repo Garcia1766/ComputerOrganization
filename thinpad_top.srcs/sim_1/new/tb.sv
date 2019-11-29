@@ -53,6 +53,11 @@ parameter FLASH_INIT_FILE = "/tmp/kernel.elf";    //Flash初始化文件，请�
 assign rxd = 1'b1; //idle state
 
 initial begin
+    clock_btn = 0;
+    forever #50 clock_btn = ~clock_btn;
+end
+
+initial begin
     //在这里可以自定义测试输入序列，例如：
 
     #10 reset_btn = 0;
