@@ -212,8 +212,8 @@ module thinpad_top(
 // );
 // /* =========== Demo code end =========== */
 
-assign uart_rdn = 1'b1;
-assign uart_wrn = 1'b1;
+// assign uart_rdn = 1'b1;
+// assign uart_wrn = 1'b1;
 
 wire[`RegBus] inst_data;
 wire[`RegBus] inst_addr;
@@ -223,21 +223,24 @@ wire[`RegBus] ram_addr;
 wire[`RegBus] ram_data_o;
 wire          ram_we;
 wire[3:0]     ram_sel;
-wire[3:0]     ram_ce;
+wire          ram_ce;
 
-wire              sram1_ce;
-wire              sram1_we;
-wire[19:0]        sram1_addr;
-wire[`InstBus]    sram1_data_i;
-wire[3:0]         sram1_sel;
-wire[`InstBus]    sram1_data_o;
+wire sram1_ce;
+wire sram1_we;
+wire[19:0] sram1_addr;
+wire[31:0] sram1_data_o;
+wire[31:0] sram1_data_i;
+wire[3:0] sram1_sel;
 
-wire              sram2_ce;
-wire              sram2_we;
-wire[19:0]        sram2_addr;
-wire[`InstBus]    sram2_data_i;
-wire[3:0]         sram2_sel;
-wire[`InstBus]    sram2_data_o;
+wire sram2_ce;
+wire sram2_we;
+wire[19:0] sram2_addr;
+wire[31:0] sram2_data_o;
+wire[31:0] sram2_data_i;
+wire[3:0] sram2_sel;
+
+assign dpy0 = inst_addr[7:0];
+assign leds = inst_data[15:0];
 
 openmips mips0(
     .clk(clk_11M0592),
@@ -270,18 +273,25 @@ bus_ctrl bus0(
     .mem_sel_i(ram_sel),
     .mem_data_o(ram_data_i),
 
+    .uart_rdn(uart_rdn),
+    .uart_wrn(uart_wrn),
+    .uart_dataready(uart_dataready),
+    .uart_tbre(uart_tbre),
+    .uart_tsre(uart_tsre),
+    .uart_data(base_ram_data),
+
     .sram1_ce_o(sram1_ce),
     .sram1_we_o(sram1_we),
     .sram1_addr_o(sram1_addr),
-    .sram1_data_o(sram1_data_o),
     .sram1_sel_o(sram1_sel),
+    .sram1_data_o(sram1_data_o),
     .sram1_data_i(sram1_data_i),
 
     .sram2_ce_o(sram2_ce),
     .sram2_we_o(sram2_we),
     .sram2_addr_o(sram2_addr),
-    .sram2_data_o(sram2_data_o),
     .sram2_sel_o(sram2_sel),
+    .sram2_data_o(sram2_data_o),
     .sram2_data_i(sram2_data_i)
 );
 

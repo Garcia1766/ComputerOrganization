@@ -8,6 +8,8 @@ module openmips(
     output wire[`RegBus] inst_addr_o,
     output wire          inst_ce_o,
 
+    output wire[15:0] reg1,
+
     input wire[`RegBus]  ram_data_i,
     output wire[`RegBus] ram_addr_o,
     output wire[`RegBus] ram_data_o,
@@ -19,6 +21,20 @@ module openmips(
     input wire[5:0]      int_i,
     output wire          timer_int_o
 );
+
+// fake_pc fake_pc0(
+//     .clk(clk),
+//     .rst(rst),
+//     .pc(inst_addr_o),
+//     .ce(inst_ce_o)
+// );
+
+// assign reg1 = 32'b0;
+// assign ram_data_o = 32'b0;
+// assign ram_addr_o = 32'b0;
+// assign ram_we_o = 1'b0;
+// assign ram_ce_o = 1'b0;
+// assign ram_sel_o = 1'b0;
 
 wire[`InstAddrBus]  pc;
 wire[`InstAddrBus]  id_pc_i;
@@ -224,6 +240,9 @@ id id0(
 regfile regfile1(
     .clk (clk),
     .rst (rst),
+
+    .reg1(reg1),
+
     .we    (wb_wreg_i),
     .waddr (wb_wd_i),
     .wdata (wb_wdata_i),

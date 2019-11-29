@@ -96,6 +96,10 @@ always_comb begin
         reg1_addr_o <= `NOPRegAddr;
         reg2_addr_o <= `NOPRegAddr;
         imm         <= `ZeroWord;
+        link_addr   <= `ZeroWord;
+        branch_addr <= `ZeroWord;
+        branch_flag <= `NotBranch;
+        next_in_delayslot <= `NotInDelaySlot;
     end else begin
         aluop_o     <= `EXE_NOP_OP;
         alusel_o    <= `EXE_RES_NOP;
@@ -162,7 +166,7 @@ always_comb begin
                 alusel_o    <= `EXE_RES_ARITH;
                 reg1_imm    <= 1'b0;
                 reg2_imm    <= 1'b1;
-                imm         <= {16'h0, inst_i[15:0]};
+                imm         <= {{16{inst_i[15]}}, inst_i[15:0]};
                 wd_o        <= inst_i[20:16];
                 instvalid   <= `InstValid;
             end
@@ -445,6 +449,7 @@ always_comb begin
         reg1_o <= imm;
     end else if ((last_is_load == 1'b1) && (ex_wd_i == reg1_addr_o)) begin
         reg1_loadrelate <= `Stop;
+        reg1_o <= `ZeroWord;
     end else if((ex_wreg_i == 1'b1) && (ex_wd_i == reg1_addr_o)) begin
         reg1_o <= ex_wdata_i;   // 采用ex阶段的前传数据
     end else if((mem_wreg_i == 1'b1) && (mem_wd_i == reg1_addr_o)) begin
@@ -456,12 +461,14 @@ end
 
 // 操作数2输出选择
 always_comb begin
+    reg2_loadrelate <= `NoStop;
     if(rst == `RstEnable) begin
         reg2_o <= `ZeroWord;    // 复位时的值
     end else if(reg2_imm == 1'b1) begin
         reg2_o <= imm;          // 采用立即数
     end else if ((last_is_load == 1'b1) && (ex_wd_i == reg2_addr_o)) begin
         reg2_loadrelate <= `Stop;
+        reg2_o <= `ZeroWord;
     end else if((ex_wreg_i == 1'b1) && (ex_wd_i == reg2_addr_o)) begin
         reg2_o <= ex_wdata_i;   // 采用ex阶段的前传数据
     end else if((mem_wreg_i == 1'b1) && (mem_wd_i == reg2_addr_o)) begin
