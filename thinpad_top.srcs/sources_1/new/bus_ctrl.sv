@@ -61,6 +61,7 @@ always_comb begin
     sram_sel_o  <= 4'b0000;
     uart_wrn    <= 1'b1;
     uart_rdn    <= 1'b1;
+    uart_data   <= 32'b0;
     if (rst == `RstEnable) begin
         if_data_o <= `ZeroWord;
         mem_data_o <= `ZeroWord;

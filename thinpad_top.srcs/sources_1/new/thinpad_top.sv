@@ -223,7 +223,7 @@ wire[`RegBus] ram_addr;
 wire[`RegBus] ram_data_o;
 wire          ram_we;
 wire[3:0]     ram_sel;
-wire[3:0]     ram_ce;
+wire          ram_ce;
 
 // wire              sram1_ce;
 // wire              sram1_we;

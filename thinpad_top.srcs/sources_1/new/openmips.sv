@@ -13,7 +13,7 @@ module openmips(
     output wire[`RegBus] ram_data_o,
     output wire          ram_we_o,
     output wire[3:0]     ram_sel_o,
-    output wire[3:0]     ram_ce_o
+    output wire          ram_ce_o
 );
 
 wire[`InstAddrBus]  pc;
