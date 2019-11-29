@@ -69,7 +69,7 @@ always_comb begin
         wreg_o  <= `WriteDisable;
         wdata_o <= `ZeroWord;
         mem_addr_o <= `ZeroWord;
-        mem_we_o <= `WriteDisable;
+        mem_we <= `WriteDisable;
         mem_sel_o <= 4'b0000;
         mem_data_o <= `ZeroWord;
         mem_ce_o <= `ChipDisable;
@@ -80,7 +80,7 @@ always_comb begin
         wd_o    <= wd_i;
         wreg_o  <= wreg_i;
         wdata_o <= wdata_i;
-        mem_we_o <= `WriteDisable;
+        mem_we <= `WriteDisable;
         mem_addr_o <= `ZeroWord;
         mem_sel_o <= 4'b1111;
         mem_ce_o <= `ChipDisable;
@@ -140,7 +140,7 @@ always_comb begin
             end
             `EXE_SB_OP: begin
                 mem_addr_o <= mem_addr_i;
-                mem_we_o <= `WriteEnable;
+                mem_we <= `WriteEnable;
                 mem_data_o <= {reg2_i[7:0],reg2_i[7:0],reg2_i[7:0],reg2_i[7:0]};
                 mem_ce_o <= `ChipEnable;
                 case (mem_addr_i[1:0])
@@ -163,7 +163,7 @@ always_comb begin
             end
             `EXE_SW_OP:    begin
                 mem_addr_o <= mem_addr_i;
-                mem_we_o <= `WriteEnable;
+                mem_we <= `WriteEnable;
                 mem_data_o <= reg2_i;
                 mem_sel_o <= 4'b1111;
                 mem_ce_o <= `ChipEnable;

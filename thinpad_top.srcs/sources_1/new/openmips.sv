@@ -492,8 +492,6 @@ cp0_reg cp0_reg0(
     
     .int_i(int_i),
     
-    .data_o(cp0_data_o),
-    
     .timer_int_o(timer_int_o),
 
     //异常相关
