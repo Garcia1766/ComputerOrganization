@@ -16,7 +16,7 @@ module ex(
     output reg[`RegBus]     wdata_o,
 
     input wire[`RegBus]     link_addr,
-    input wire              is_in_delayslot,
+    input wire              is_in_delayslot, //即 is_in_delayslot_i
 
     input wire[`RegBus]     inst_i,
     output wire[`AluOpBus]  aluop_o,
@@ -42,7 +42,14 @@ module ex(
     // 向流水线下一级传递，用于写CP0中的指定寄存器
     output reg              cp0_reg_we_o,
     output reg[4:0]         cp0_reg_write_addr_o,
-    output reg[`RegBus]     cp0_reg_data_o
+    output reg[`RegBus]     cp0_reg_data_o,
+
+    //异常相关
+    input wire[31:0]        excepttype_i,
+    input wire[`RegBus]     current_inst_address_i,
+    output wire[31:0]       excepttype_o,
+    output wire             is_in_delayslot_o,
+    output wire[`RegBus]    current_inst_address_o
 );
 
 wire[`RegBus] addr_o;
@@ -63,7 +70,8 @@ assign stallreq = (((last_aluop == `EXE_SB_OP) || (last_aluop == `EXE_SW_OP)) &&
 // // 一些中间结果
 // logic reg1_lt_reg2; // reg1是否小于reg2
 // logic[`RegBus] reg2_i_mux;   // reg2的补码
-// logic[`RegBus] sum_res;      // 加法结果
+// logic[`RegBus]  sum_res;    // 加法结果
+// logic           ov_sum;     // 是否溢出
 
 // assign reg2_i_mux = (aluop_i == `EXE_SLT_OP) ? (~reg2_i)+1 : reg2_i;
 // assign sum_res = reg1_i + reg2_i_mux;
@@ -71,6 +79,17 @@ assign stallreq = (((last_aluop == `EXE_SB_OP) || (last_aluop == `EXE_SW_OP)) &&
 //                         ((reg1_i[31] && !reg2_i[31]) || (!reg1_i[31] && !reg2_i[31] && sum_res[31]) || (reg1_i[31] && reg2_i[31] && sum_res[31]))
 //                         : (reg1_i < reg2_i);
 
+//异常相关
+reg trapassert; //是否有自陷异常
+reg ovassert;   //是否有溢出异常
+//执行阶段输出的异常信息就是译码阶段的异常信息加上自陷异常、溢出异常，第10位表示是否有自陷异常，第11位表示是否有溢出异常
+assign excepttype_o = {excepttype_i[31:12], ovassert, trapassert, excepttype_i[9:8], 8'h00};
+assign is_in_delayslot_o = is_in_delayslot;
+assign current_inst_address_o = current_inst_address_i;
+
+//计算以下4个变量的值，判断有无溢出异常
+//assign sum_res = reg1_i + reg2_i;
+//assign ov_sum  = ((!reg1_i[31] && !reg2_i[31]) && sum_res[31]) || ((reg1_i[31] && reg2_i[31]) && !sum_res[31]);
 
 // 算数运算的组合逻辑
 always_comb begin
@@ -152,6 +171,16 @@ always_comb begin
         cp0_reg_we_o         <= `WriteDisable;
         cp0_reg_data_o       <= `ZeroWord;
     end
+end
+
+//无自陷异常
+always_comb begin
+    trapassert <= `TrapNotAssert;
+end
+
+//判断是否发生溢出异常
+always_comb begin
+    ovassert <= 1'b0;
 end
 
 // 输出的组合逻辑

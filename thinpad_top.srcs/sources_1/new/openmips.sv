@@ -110,6 +110,38 @@ wire[4:0]       cp0_raddr_i;
 wire mem_ce;
 assign ram_ce_o = mem_ce;
 
+//异常相关
+//从CTRL模块引出的线
+wire            flush;
+wire[`RegBus]   new_pc;
+//从ID模块引出的线
+wire[31:0]      id_excepttype_o;
+wire[`RegBus]   id_current_inst_address_o;
+//接入EX模块的线
+wire[31:0]      ex_excepttype_i;	
+wire[`RegBus]   ex_current_inst_address_i;
+//从EX模块引出的线
+wire[31:0]      ex_excepttype_o;
+wire[`RegBus]   ex_current_inst_address_o;
+wire            ex_is_in_delayslot_o;
+//接入MEM模块的线
+wire[31:0]      mem_excepttype_i;	
+wire[`RegBus]   mem_current_inst_address_i;
+wire            mem_is_in_delayslot_i;
+//从MEM模块引出的线
+wire[31:0]      mem_excepttype_o;
+wire[`RegBus]   mem_current_inst_address_o;
+wire            mem_is_in_delayslot_o;
+wire[`RegBus]   latest_epc;
+//从CP0引出的线
+wire[`RegBus]   cp0_count;
+wire[`RegBus]	cp0_compare;
+wire[`RegBus]	cp0_status;
+wire[`RegBus]	cp0_cause;
+wire[`RegBus]	cp0_epc;
+wire[`RegBus]	cp0_config;
+wire[`RegBus]	cp0_prid;
+
 //pc_reg例化
 pc_reg pc_reg0(
     .clk(clk),
@@ -118,7 +150,10 @@ pc_reg pc_reg0(
     .pc(pc),
     .ce(inst_ce_o),
     .branch_addr(branch_addr),
-    .branch_flag(branch_flag)
+    .branch_flag(branch_flag),
+    //异常相关
+    .flush(flush),
+    .new_pc(new_pc)
 );
 
 assign inst_addr_o = pc;
@@ -131,7 +166,9 @@ if_id if_id0(
     .if_inst(inst_data_i),
     .stall(stall),
     .id_pc(id_pc_i),
-    .id_inst(id_inst_i)
+    .id_inst(id_inst_i),
+    //异常相关
+    .flush(flush)
 );
 
 //译码阶段ID模块
@@ -176,7 +213,11 @@ id id0(
 
     .inst_o(id_inst_o),
 
-    .ex_aluop(ex_aluop_o)
+    .ex_aluop(ex_aluop_o),
+
+    //异常相关
+    .excepttype_o(id_excepttype_o),
+    .current_inst_address_o(id_current_inst_address_o)
 );
 
 //通用寄存器Regfile例化
@@ -223,7 +264,14 @@ id_ex id_ex0(
     .is_in_delayslot_o(is_in_delayslot),
 
     .id_inst(id_inst_o),
-    .ex_inst(ex_inst_i)
+    .ex_inst(ex_inst_i),
+
+    //异常相关
+    .flush(flush),
+    .id_current_inst_address(id_current_inst_address_o),
+    .id_excepttype(id_excepttype_o),
+    .ex_current_inst_address(ex_current_inst_address_i),
+    .ex_excepttype(ex_excepttype_i)
 );
 
 //EX模块
@@ -269,7 +317,14 @@ ex ex0(
     //向EX/MEM模块传递，用于写CP0中的寄存器
     .cp0_reg_we_o(ex_cp0_reg_we_o),
 	.cp0_reg_write_addr_o(ex_cp0_reg_write_addr_o),
-	.cp0_reg_data_o(ex_cp0_reg_data_o)
+	.cp0_reg_data_o(ex_cp0_reg_data_o),
+
+    //异常相关
+    .excepttype_i(ex_excepttype_i),
+    .current_inst_address_i(ex_current_inst_address_i),
+    .excepttype_o(ex_excepttype_o),
+    .is_in_delayslot_o(ex_is_in_delayslot_o),
+    .current_inst_address_o(ex_current_inst_address_o)
 );
 
 //EX/MEM模块
@@ -301,7 +356,16 @@ ex_mem ex_mem0(
 	.ex_cp0_reg_data(ex_cp0_reg_data_o),
     .mem_cp0_reg_we(mem_cp0_reg_we_i),
 	.mem_cp0_reg_write_addr(mem_cp0_reg_write_addr_i),
-	.mem_cp0_reg_data(mem_cp0_reg_data_i)
+	.mem_cp0_reg_data(mem_cp0_reg_data_i),
+
+    //异常相关
+    .flush(flush),
+    .ex_excepttype(ex_excepttype_o),
+    .ex_is_in_delayslot(ex_is_in_delayslot_o),
+    .ex_current_inst_address(ex_current_inst_address_o),
+    .mem_excepttype(mem_excepttype_i),
+    .mem_is_in_delayslot(mem_is_in_delayslot_i),
+    .mem_current_inst_address(mem_current_inst_address_i)
 );
 
 //MEM模块例化
@@ -335,7 +399,24 @@ mem mem0(
 	.cp0_reg_data_i(mem_cp0_reg_data_i),
     .cp0_reg_we_o(mem_cp0_reg_we_o),
 	.cp0_reg_write_addr_o(mem_cp0_reg_write_addr_o),
-	.cp0_reg_data_o(mem_cp0_reg_data_o)
+	.cp0_reg_data_o(mem_cp0_reg_data_o),
+
+    //异常相关
+    //输入
+    .excepttype_i(mem_excepttype_i),
+	.is_in_delayslot_i(mem_is_in_delayslot_i),
+	.current_inst_address_i(mem_current_inst_address_i),
+    .cp0_status_i(cp0_status),
+	.cp0_cause_i(cp0_cause),
+	.cp0_epc_i(cp0_epc),
+    .wb_cp0_reg_we(wb_cp0_reg_we_i),
+	.wb_cp0_reg_write_addr(wb_cp0_reg_write_addr_i),
+	.wb_cp0_reg_data(wb_cp0_reg_data_i),
+    //输出
+    .excepttype_o(mem_excepttype_o),
+	.is_in_delayslot_o(mem_is_in_delayslot_o),
+	.current_inst_address_o(mem_current_inst_address_o),
+    .cp0_epc_o(latest_epc)
 );
 
 //MEM/WB模块
@@ -361,7 +442,10 @@ mem_wb mem_wb0(
 	.mem_cp0_reg_data(mem_cp0_reg_data_o),
     .wb_cp0_reg_we(wb_cp0_reg_we_i),
 	.wb_cp0_reg_write_addr(wb_cp0_reg_write_addr_i),
-	.wb_cp0_reg_data(wb_cp0_reg_data_i)
+	.wb_cp0_reg_data(wb_cp0_reg_data_i),
+
+    //异常相关
+    .flush(flush)
 );
 
 ctrl ctrl0(
@@ -369,7 +453,13 @@ ctrl ctrl0(
     .stall_req_id(stall_req_id),
     .stall_req_ex(stall_req_ex),
     .stall(stall),
-    .mem_ce(mem_ce)
+    .mem_ce(mem_ce),
+
+    //异常相关
+    .excepttype_i(mem_excepttype_o),
+	.cp0_epc_i(latest_epc),
+    .new_pc(new_pc),
+	.flush(flush)
 );
 
 cp0_reg cp0_reg0(
@@ -381,14 +471,26 @@ cp0_reg cp0_reg0(
     .waddr_i(wb_cp0_reg_write_addr_i),
     .data_i(wb_cp0_reg_data_i),
     
-    //.excepttype_i(mem_excepttype_o),
     .int_i(int_i),
-    //.current_inst_addr_i(mem_current_inst_address_o),
-    //.is_in_delayslot_i(mem_is_in_delayslot_o),
     
     .data_o(cp0_data_o),
     
-    .timer_int_o(timer_int_o)  			
+    .timer_int_o(timer_int_o),
+
+    //异常相关
+    //输入
+    .excepttype_i(mem_excepttype_o),
+    .current_inst_addr_i(mem_current_inst_address_o),
+    .is_in_delayslot_i(mem_is_in_delayslot_o),
+    //输出
+    .data_o(cp0_data_o),
+	.count_o(cp0_count),
+	.compare_o(cp0_compare),
+	.status_o(cp0_status),
+	.cause_o(cp0_cause),
+	.epc_o(cp0_epc),
+	.config_o(cp0_config),
+	.prid_o(cp0_prid)
 );
 
 endmodule

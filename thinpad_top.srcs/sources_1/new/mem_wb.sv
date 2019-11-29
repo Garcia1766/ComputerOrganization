@@ -23,11 +23,14 @@ module mem_wb(
     input wire[`RegBus]     mem_cp0_reg_data,
     output reg              wb_cp0_reg_we,
     output reg[4:0]         wb_cp0_reg_write_addr,
-    output reg[`RegBus]     wb_cp0_reg_data
+    output reg[`RegBus]     wb_cp0_reg_data,
+
+    //异常相关
+    input wire              flush
 );
 
 always_ff @ (posedge clk) begin
-    if(rst == `RstEnable || (stall[4] == `Stop && stall[5] == `NoStop)) begin
+    if(rst == `RstEnable || (stall[4] == `Stop && stall[5] == `NoStop) || flush == 1'b1) begin
         wb_wd    <= `NOPRegAddr;
         wb_wreg  <= `WriteDisable;
         wb_wdata <= `ZeroWord;

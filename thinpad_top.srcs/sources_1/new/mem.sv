@@ -30,8 +30,38 @@ module mem(
     input wire[`RegBus]     cp0_reg_data_i,
     output reg              cp0_reg_we_o,
     output reg[4:0]         cp0_reg_write_addr_o,
-    output reg[`RegBus]     cp0_reg_data_o
+    output reg[`RegBus]     cp0_reg_data_o,
+
+    //异常相关
+    //来自ex
+    input wire[31:0]        excepttype_i,
+    input wire              is_in_delayslot_i,
+    input wire[`RegBus]     current_inst_address_i,
+    //来自CP0
+    input wire[`RegBus]     cp0_status_i,
+    input wire[`RegBus]     cp0_cause_i,
+    input wire[`RegBus]     cp0_epc_i,
+    //来自wb，是回写阶段的指令对CP0中寄存器的写信息，用来检测数据相关
+    input wire              wb_cp0_reg_we,
+    input wire[4:0]         wb_cp0_reg_write_addr,
+    input wire[`RegBus]     wb_cp0_reg_data,
+    //输出至CP0
+    output reg[31:0]        excepttype_o,
+    output wire             is_in_delayslot_o, //仿存阶段的指令是否是延迟槽指令
+    output wire[`RegBus]    current_inst_address_o, //仿存阶段指令的地址
+    //输出至ctrl模块
+    output wire[`RegBus]    cp0_epc_o
 );
+
+wire[`RegBus]   zero32;
+reg[`RegBus]    cp0_status; //保存CP0中Status寄存器的最新值
+reg[`RegBus]    cp0_cause;  //保存CP0中Cause寄存器的最新值
+reg[`RegBus]    cp0_epc;    //保存CP0中EPC寄存器的最新值
+reg             mem_we;
+
+assign zero32 = `ZeroWord;
+assign is_in_delayslot_o = is_in_delayslot_i;
+assign current_inst_address_o = current_inst_address_i;
 
 always_comb begin
     if(rst == `RstEnable) begin
@@ -144,5 +174,80 @@ always_comb begin
     end    //if
 end      //always
 
+/* 第一步：得到CP0中寄存器的最新值 */
+// 得到CP0中Status寄存器的最新值，步骤如下：
+// 判断当前处于回写阶段的指令是否要写CP0中Status寄存器，若是，则要写入的值就是Status的最新值；
+// 否则通过cp0_status_i传入的来自CP0的数据就是最新值
+always_comb begin
+    if (rst == `RstEnable) begin
+        cp0_status <= `ZeroWord;
+    end else if ((wb_cp0_reg_we == `WriteEnable) && (wb_cp0_reg_write_addr == `CP0_REG_STATUS)) begin
+        cp0_status <= wb_cp0_reg_data;
+    end else begin
+        cp0_status <= cp0_status_i;
+    end
+end
+
+// 得到CP0中EPC寄存器的最新值，步骤如下：
+// 判断当前处于回写阶段的指令是否要写CP0中EPC寄存器，若是，则要写入的值就是EPC的最新值；
+// 否则通过cp0_epc_i传入的来自CP0的数据就是最新值
+always_comb begin
+    if (rst == `RstEnable) begin
+        cp0_epc <= `ZeroWord;
+    end else if ((wb_cp0_reg_we == `WriteEnable) && (wb_cp0_reg_write_addr == `CP0_REG_EPC)) begin
+        cp0_epc <= wb_cp0_reg_data;
+    end else begin
+        cp0_epc <= cp0_epc_i;
+    end
+end
+
+assign cp0_epc_o = cp0_epc;
+
+// 得到CP0中Cause寄存器的最新值，步骤如下：
+// 判断当前处于回写阶段的指令是否要写CP0中Cause寄存器，若是，则要写入的值就是Cause的最新值；（注意，Cause寄存器只有几个字段可写）
+// 否则通过cp0_cause_i传入的来自CP0的数据就是最新值
+always_comb begin
+    if (rst == `RstEnable) begin
+        cp0_cause <= `ZeroWord;
+    end else if ((wb_cp0_reg_we == `WriteEnable) && (wb_cp0_reg_write_addr == `CP0_REG_CAUSE)) begin
+        cp0_cause[9:8]  <= wb_cp0_reg_data[9:8];// IP[1:0]
+        cp0_cause[22]   <= wb_cp0_reg_data[22]; // WP
+        cp0_cause[23]   <= wb_cp0_reg_data[23]; // IV
+    end else begin
+        cp0_cause <= cp0_cause_i;
+    end
+end
+
+/* 第二步：给出最终异常类型 */
+always_comb begin
+    if(rst == `RstEnable) begin
+        excepttype_o <= `ZeroWord;
+    end else begin
+        excepttype_o <= `ZeroWord;
+
+        if(current_inst_address_i != `ZeroWord) begin
+            if( ((cp0_cause[15:8] & cp0_status[15:8]) != 8'h00) && 
+                (cp0_status[1] == 1'b0) && 
+                (cp0_status[0] == 1'b1)) begin
+                excepttype_o <= 32'h00000001;        //interrupt
+            end else if(excepttype_i[8] == 1'b1) begin
+                excepttype_o <= 32'h00000008;        //syscall
+            end else if(excepttype_i[9] == 1'b1) begin
+                excepttype_o <= 32'h0000000a;        //inst_invalid
+            end else if(excepttype_i[10] ==1'b1) begin
+                excepttype_o <= 32'h0000000d;        //trap
+            end else if(excepttype_i[11] == 1'b1) begin
+                excepttype_o <= 32'h0000000c;        //ov
+            end else if(excepttype_i[12] == 1'b1) begin
+                excepttype_o <= 32'h0000000e;        //eret
+            end
+        end
+            
+    end
+end
+
+/* 第三步：给出对数据储存器的写操作 */
+// 如果发生异常，需要取消对数据储存器的写操作
+assign mem_we_o = mem_we & (~(|excepttype_o));
 
 endmodule
