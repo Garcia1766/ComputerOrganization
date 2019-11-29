@@ -225,19 +225,19 @@ wire          ram_we;
 wire[3:0]     ram_sel;
 wire          ram_ce;
 
-// wire              sram1_ce;
-// wire              sram1_we;
-// wire[19:0]        sram1_addr;
-// wire[`InstBus]    sram1_data_i;
-// wire[3:0]         sram1_sel;
-// wire[`InstBus]    sram1_data_o;
+wire sram1_ce;
+wire sram1_we;
+wire[19:0] sram1_addr;
+wire[31:0] sram1_data_o;
+wire[31:0] sram1_data_i;
+wire[3:0] sram1_sel;
 
-// wire              sram2_ce;
-// wire              sram2_we;
-// wire[19:0]        sram2_addr;
-// wire[`InstBus]    sram2_data_i;
-// wire[3:0]         sram2_sel;
-// wire[`InstBus]    sram2_data_o;
+wire sram2_ce;
+wire sram2_we;
+wire[19:0] sram2_addr;
+wire[31:0] sram2_data_o;
+wire[31:0] sram2_data_i;
+wire[3:0] sram2_sel;
 
 assign dpy0 = inst_addr[7:0];
 assign leds = inst_data[15:0];
@@ -278,55 +278,57 @@ bus_ctrl bus0(
     .uart_dataready(uart_dataready),
     .uart_tbre(uart_tbre),
     .uart_tsre(uart_tsre),
-    .sram1_ce_o(base_ram_ce_n),
-    .sram1_we_o(base_ram_we_n),
-    .sram1_oe_o(base_ram_oe_n),
-    .sram1_addr_o(base_ram_addr),
-    .sram1_sel_o(base_ram_be_n),
-    .baseram_bus(base_ram_data),
+    .uart_data(base_ram_data),
 
-    .sram2_ce_o(ext_ram_ce_n),
-    .sram2_we_o(ext_ram_we_n),
-    .sram2_oe_o(ext_ram_oe_n),
-    .sram2_addr_o(ext_ram_addr),
-    .sram2_sel_o(ext_ram_be_n),
-    .extram_bus(ext_ram_data)
+    .sram1_ce_o(sram1_ce),
+    .sram1_we_o(sram1_we),
+    .sram1_addr_o(sram1_addr),
+    .sram1_sel_o(sram1_sel),
+    .sram1_data_o(sram1_data_o),
+    .sram1_data_i(sram1_data_i),
+
+    .sram2_ce_o(sram2_ce),
+    .sram2_we_o(sram2_we),
+    .sram2_addr_o(sram2_addr),
+    .sram2_sel_o(sram2_sel),
+    .sram2_data_o(sram2_data_o),
+    .sram2_data_i(sram2_data_i)
 );
 
-// sram_ctrl sram1(
-//     // 面向cpu的接口
-//     .addr_i(sram1_addr),
-//     .data_i(sram1_data_o),
-//     .ce_i(sram1_ce),
-//     .we_i(sram1_we),
-//     .sel_i(sram1_sel),
-//     .data_o(sram1_data_i),
+sram_ctrl sram1(
+    // 面向cpu的接口
+    .addr_i(sram1_addr),
+    .data_i(sram1_data_o),
+    .ce_i(sram1_ce),
+    .we_i(sram1_we),
+    .sel_i(sram1_sel),
+    .data_o(sram1_data_i),
 
-//     // 面向sram的接口
-//     .sram_data(base_ram_data),
-//     .sram_addr(base_ram_addr),
-//     .sram_ce_n(base_ram_ce_n),
-//     .sram_oe_n(base_ram_oe_n),
-//     .sram_we_n(base_ram_we_n),
-//     .sram_be_n(base_ram_be_n)
-// );
+    // 面向sram的接口
+    .sram_data(base_ram_data),
+    .sram_addr(base_ram_addr),
+    .sram_ce_n(base_ram_ce_n),
+    .sram_oe_n(base_ram_oe_n),
+    .sram_we_n(base_ram_we_n),
+    .sram_be_n(base_ram_be_n)
+);
 
-// sram_ctrl sram2(
-//     // 面向cpu的接口
-//     .addr_i(sram2_addr),
-//     .data_i(sram2_data_o),
-//     .ce_i(sram2_ce),
-//     .we_i(sram2_we),
-//     .sel_i(sram2_sel),
-//     .data_o(sram2_data_i),
+sram_ctrl sram2(
+    // 面向cpu的接口
+    .addr_i(sram2_addr),
+    .data_i(sram2_data_o),
+    .ce_i(sram2_ce),
+    .we_i(sram2_we),
+    .sel_i(sram2_sel),
+    .data_o(sram2_data_i),
 
-//     // 面向sram的接口
-//     .sram_data(ext_ram_data),
-//     .sram_addr(ext_ram_addr),
-//     .sram_ce_n(ext_ram_ce_n),
-//     .sram_oe_n(ext_ram_oe_n),
-//     .sram_we_n(ext_ram_we_n),
-//     .sram_be_n(ext_ram_be_n)
-// );
+    // 面向sram的接口
+    .sram_data(ext_ram_data),
+    .sram_addr(ext_ram_addr),
+    .sram_ce_n(ext_ram_ce_n),
+    .sram_oe_n(ext_ram_oe_n),
+    .sram_we_n(ext_ram_we_n),
+    .sram_be_n(ext_ram_be_n)
+);
 
 endmodule
