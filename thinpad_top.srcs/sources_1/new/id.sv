@@ -427,6 +427,7 @@ always_comb begin
             aluop_o     <= `EXE_MTC0_OP;
             alusel_o    <= `EXE_RES_MOVE;
             wreg_o      <= `WriteDisable;
+            instvalid   <= `InstValid;
             reg1_addr_o <= inst_i[20:16];
         end else if (inst_i == `EXE_ERET) begin //eret
             wreg_o      <= `WriteDisable;
