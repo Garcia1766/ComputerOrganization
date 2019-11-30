@@ -36,7 +36,7 @@ always @ (posedge clk) begin
 		count_o <= `ZeroWord;
 		compare_o <= `ZeroWord;
 		//status寄存器的CU为0001，表示协处理器CP0存在
-		status_o <= 32'b00010000000000000000000000000000;
+		status_o <= 32'b00010000000000001111111100000000;
 		cause_o <= `ZeroWord;
 		epc_o <= `ZeroWord;
 		//config寄存器的BE为1，表示Big-Endian；MT为00，表示没有MMU
