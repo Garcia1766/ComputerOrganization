@@ -26,19 +26,19 @@ always_comb begin
         stall   <= 6'b000000;
         case(excepttype_i)
             32'h00000001:   begin   // Interrupt
-                new_pc  <= 32'h00000020;
+                new_pc  <= 32'h80001180;
             end
             32'h00000008:   begin   // Syscall
-                new_pc  <= 32'h00000040;
+                new_pc  <= 32'h80001180;
             end
             32'h0000000a:   begin   // Inst invalid
-                new_pc  <= 32'h00000040;
+                new_pc  <= 32'h80001180;
             end
             32'h0000000d:   begin   // Trap
-                new_pc  <= 32'h00000040;
+                new_pc  <= 32'h80001180;
             end
             32'h0000000c:   begin   // ov
-                new_pc  <= 32'h00000040;
+                new_pc  <= 32'h80001180;
             end
             32'h0000000e:   begin   // eret
                 new_pc  <= cp0_epc_i;
