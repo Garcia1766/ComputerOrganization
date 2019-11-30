@@ -42,7 +42,7 @@ always @ (posedge clk) begin
 		//config寄存器的BE为1，表示Big-Endian；MT为00，表示没有MMU
 		config_o <= 32'b00000000_00000000_00000000_00000000;
 		//制作者是L，对应的是0x48，类型是0x1，基本类型，版本号是1.0
-		prid_o <= 32'b00000000_01001100_00000001_00000010;
+		prid_o <= 32'b10000000_00000000_00010000_00000000;
 		timer_int_o <= `InterruptNotAssert;
 	end else begin
 		count_o <= count_o + 1 ;
@@ -73,7 +73,10 @@ always @ (posedge clk) begin
 					cause_o[9:8] <= data_i[9:8];
 					cause_o[23] <= data_i[23];
 					cause_o[22] <= data_i[22];
-				end					
+				end	
+				`CP0_REG_PRId:	begin
+					prid_o <= data_i;
+				end				
 			endcase  //case addr_i
 		end
 		
