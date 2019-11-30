@@ -36,13 +36,13 @@ always @ (posedge clk) begin
 		count_o <= `ZeroWord;
 		compare_o <= `ZeroWord;
 		//status寄存器的CU为0001，表示协处理器CP0存在
-		status_o <= 32'b00010000000000001111111100000000;
+		status_o <= 32'b00010000_00000000_11111111_00000000;
 		cause_o <= `ZeroWord;
 		epc_o <= `ZeroWord;
 		//config寄存器的BE为1，表示Big-Endian；MT为00，表示没有MMU
-		config_o <= 32'b00000000000000001000000000000000;
+		config_o <= 32'b00000000_00000000_00000000_00000000;
 		//制作者是L，对应的是0x48，类型是0x1，基本类型，版本号是1.0
-		prid_o <= 32'b00000000010011000000000100000010;
+		prid_o <= 32'b00000000_01001100_00000001_00000010;
 		timer_int_o <= `InterruptNotAssert;
 	end else begin
 		count_o <= count_o + 1 ;
