@@ -422,6 +422,8 @@ always_comb begin
             wd_o        <= inst_i[20:16];
             wreg_o      <= `WriteEnable;
             instvalid   <= `InstValid;
+            reg1_imm    <= 1'b1;
+            reg2_imm    <= 1'b1;
         end else if (inst_i[31:21] == 11'b01000000100 &&
             inst_i[10:0] == 11'b00000000000) begin //mtc0
             aluop_o     <= `EXE_MTC0_OP;
@@ -429,6 +431,8 @@ always_comb begin
             wreg_o      <= `WriteDisable;
             instvalid   <= `InstValid;
             reg1_addr_o <= inst_i[20:16];
+            reg1_imm    <= 1'b0;
+            reg2_imm    <= 1'b1;
         end else if (inst_i == `EXE_ERET) begin //eret
             wreg_o      <= `WriteDisable;
             aluop_o     <= `EXE_ERET;

@@ -178,7 +178,7 @@ always_comb begin
     trapassert <= `TrapNotAssert;
 end
 
-//判断是否发生溢出异常
+//无溢出异常
 always_comb begin
     ovassert <= 1'b0;
 end
