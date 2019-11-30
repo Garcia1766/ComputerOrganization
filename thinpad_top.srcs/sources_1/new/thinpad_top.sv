@@ -297,6 +297,7 @@ bus_ctrl bus0(
 
 sram_ctrl sram1(
     // 面向cpu的接口
+    .clk(clk_11M0592),
     .addr_i(sram1_addr),
     .data_i(sram1_data_o),
     .ce_i(sram1_ce),
@@ -315,6 +316,7 @@ sram_ctrl sram1(
 
 sram_ctrl sram2(
     // 面向cpu的接口
+    .clk(clk_11M0592),
     .addr_i(sram2_addr),
     .data_i(sram2_data_o),
     .ce_i(sram2_ce),
