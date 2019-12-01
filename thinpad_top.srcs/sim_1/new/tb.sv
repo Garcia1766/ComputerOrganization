@@ -47,7 +47,7 @@ wire uart_tsre;          //数据发送完毕标志
 
 //Windows需要注意路径分隔符的转义，例如"D:\\foo\\bar.bin"
 //parameter BASE_RAM_INIT_FILE = "E:\\Code\\mips32lab\\supervisor-mips32\\kernel\\kernel.bin"; //BaseRAM初始化文件，请修改为实际的绝对路径
-parameter BASE_RAM_INIT_FILE = "E:\\Code\\mips32lab\\testbench\\syscall.bin";
+parameter BASE_RAM_INIT_FILE = "E:\\Code\\mips32lab\\testbench\\lstest.bin";
 parameter EXT_RAM_INIT_FILE = "/tmp/eram.bin";    //ExtRAM初始化文件，请修改为实际的绝对路径
 parameter FLASH_INIT_FILE = "/tmp/kernel.elf";    //Flash初始化文件，请修改为实际的绝对路径
 

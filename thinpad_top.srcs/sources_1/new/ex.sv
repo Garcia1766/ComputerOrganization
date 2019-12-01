@@ -62,9 +62,10 @@ assign reg2_o = reg2_i;
 reg[`RegBus] arithout;
 reg[`RegBus] moveres;
 
-assign stallreq = (((last_aluop == `EXE_SB_OP) || (last_aluop == `EXE_SW_OP)) &&
-                    ((aluop_i == `EXE_SB_OP) || (aluop_i == `EXE_SW_OP) || (aluop_i == `EXE_LB_OP)
-                    || (aluop_i == `EXE_LH_OP) || (aluop_i == `EXE_LW_OP))) ? 1'b1 : 1'b0;
+// assign stallreq = (((last_aluop == `EXE_SB_OP) || (last_aluop == `EXE_SW_OP)) &&
+//                     ((aluop_i == `EXE_SB_OP) || (aluop_i == `EXE_SW_OP) || (aluop_i == `EXE_LB_OP)
+//                     || (aluop_i == `EXE_LH_OP) || (aluop_i == `EXE_LW_OP))) ? 1'b1 : 1'b0;
+assign stallreq = 1'b0;
 
 // slt相关的逻辑，留作备考
 // // 一些中间结果
