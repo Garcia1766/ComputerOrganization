@@ -244,6 +244,9 @@ wire stallreq_store;
 assign dpy0 = inst_addr[7:0];
 assign leds = inst_data[15:0];
 
+wire[5:0] dataready_int;
+assign dataready_int = {3'b000, uart_dataready, 2'b00};
+
 openmips mips0(
     .clk(clk_20M),
     .rst(reset_btn),
@@ -259,7 +262,9 @@ openmips mips0(
     .ram_sel_o(ram_sel),
     .ram_ce_o(ram_ce),
 
-    .stallreq_store(stallreq_store)
+    .stallreq_store(stallreq_store),
+
+    .int_i(dataready_int)
 );
 
 bus_ctrl bus0(
