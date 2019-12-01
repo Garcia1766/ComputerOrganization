@@ -15,7 +15,9 @@ module openmips(
     output wire[`RegBus] ram_data_o,
     output wire          ram_we_o,
     output wire[3:0]     ram_sel_o,
-    output wire          ram_ce_o
+    output wire          ram_ce_o,
+
+    input wire           stallreq_store
 );
 
 // fake_pc fake_pc0(
@@ -328,6 +330,7 @@ ctrl ctrl0(
     .stall_req_id(stall_req_id),
     .stall_req_ex(stall_req_ex),
     .stall(stall),
+    .stallreq_store(stallreq_store),
     .mem_ce(mem_ce)
 );
 

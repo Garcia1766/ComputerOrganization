@@ -239,6 +239,8 @@ wire[31:0] sram2_data_o;
 wire[31:0] sram2_data_i;
 wire[3:0] sram2_sel;
 
+wire stallreq_store;
+
 assign dpy0 = inst_addr[7:0];
 assign leds = inst_data[15:0];
 
@@ -255,7 +257,9 @@ openmips mips0(
     .ram_data_o(ram_data_o),
     .ram_we_o(ram_we),
     .ram_sel_o(ram_sel),
-    .ram_ce_o(ram_ce)
+    .ram_ce_o(ram_ce),
+
+    .stallreq_store(stallreq_store)
 );
 
 bus_ctrl bus0(
@@ -292,7 +296,9 @@ bus_ctrl bus0(
     .sram2_addr_o(sram2_addr),
     .sram2_sel_o(sram2_sel),
     .sram2_data_o(sram2_data_o),
-    .sram2_data_i(sram2_data_i)
+    .sram2_data_i(sram2_data_i),
+
+    .stallreq_store(stallreq_store)
 );
 
 sram_ctrl sram1(
