@@ -64,6 +64,7 @@ initial begin
     #10 reset_btn = 0;
     #10 reset_btn = 1;
     #100 reset_btn = 0;
+    cpld.pc_send_byte(8'h52);
     // cpld.pc_send_byte(8'h32);
     // #10000
     // cpld.pc_send_byte(8'h33);

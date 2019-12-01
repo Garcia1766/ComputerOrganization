@@ -249,7 +249,7 @@ assign dataready_int = {3'b000, uart_dataready, 2'b00};
 
 openmips mips0(
     .clk(clk_20M),
-    .rst(reset_btn),
+    .rst(locked),
 
     .inst_data_i(inst_data),
     .inst_addr_o(inst_addr),
@@ -269,7 +269,7 @@ openmips mips0(
 
 bus_ctrl bus0(
     .clk(clk_20M),
-    .rst(reset_btn),
+    .rst(locked),
 
     .if_ce_i(inst_ce),
     .if_addr_i(inst_addr),
