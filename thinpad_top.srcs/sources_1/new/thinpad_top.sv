@@ -248,7 +248,7 @@ wire[5:0] dataready_int;
 assign dataready_int = {3'b000, uart_dataready, 2'b00};
 
 openmips mips0(
-    .clk(clk_20M),
+    .clk(clk_11M0592),
     .rst(reset_of_clk20M),
 
     .inst_data_i(inst_data),
@@ -268,7 +268,7 @@ openmips mips0(
 );
 
 bus_ctrl bus0(
-    .clk(clk_20M),
+    .clk(clk_11M0592),
     .rst(reset_of_clk20M),
 
     .if_ce_i(inst_ce),
