@@ -245,7 +245,7 @@ assign dpy0 = inst_addr[7:0];
 assign leds = inst_data[15:0];
 
 openmips mips0(
-    .clk(clk_10M),
+    .clk(clk_20M),
     .rst(reset_btn),
 
     .inst_data_i(inst_data),
@@ -263,7 +263,7 @@ openmips mips0(
 );
 
 bus_ctrl bus0(
-    .clk(clk_10M),
+    .clk(clk_20M),
     .rst(reset_btn),
 
     .if_ce_i(inst_ce),
