@@ -97,11 +97,12 @@ pll_example clock_gen
   .clk_in1(clk_50M) // 外部时钟输入
  );
 
+reg reset_of_clk10M;
 reg reset_of_clk20M;
 // // 异步复位，同步释放
-always@(posedge clk_20M or negedge locked) begin
-    if(~locked) reset_of_clk20M <= 1'b1;
-    else        reset_of_clk20M <= 1'b0;
+always@(posedge clk_10M or negedge locked) begin
+    if(~locked) reset_of_clk10M <= 1'b1;
+    else        reset_of_clk10M <= 1'b0;
 end
 
 // always@(posedge clk_10M or posedge reset_of_clk10M) begin
@@ -248,8 +249,8 @@ wire[5:0] dataready_int;
 assign dataready_int = {3'b000, uart_dataready, 2'b00};
 
 openmips mips0(
-    .clk(clk_11M0592),
-    .rst(reset_btn),
+    .clk(clk_10M),
+    .rst(reset_of_clk10M),
 
     .inst_data_i(inst_data),
     .inst_addr_o(inst_addr),
@@ -268,8 +269,8 @@ openmips mips0(
 );
 
 bus_ctrl bus0(
-    .clk(clk_11M0592),
-    .rst(reset_btn),
+    .clk(clk_10M),
+    .rst(reset_of_clk10M),
 
     .if_ce_i(inst_ce),
     .if_addr_i(inst_addr),
@@ -308,7 +309,7 @@ bus_ctrl bus0(
 
 sram_ctrl sram1(
     // 面向cpu的接口
-    .clk(clk_11M0592),
+    .clk(clk_10M),
     .addr_i(sram1_addr),
     .data_i(sram1_data_o),
     .ce_i(sram1_ce),
@@ -327,7 +328,7 @@ sram_ctrl sram1(
 
 sram_ctrl sram2(
     // 面向cpu的接口
-    .clk(clk_11M0592),
+    .clk(clk_10M),
     .addr_i(sram2_addr),
     .data_i(sram2_data_o),
     .ce_i(sram2_ce),
