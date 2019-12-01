@@ -97,12 +97,12 @@ pll_example clock_gen
   .clk_in1(clk_50M) // 外部时钟输入
  );
 
-// reg reset_of_clk10M;
+reg reset_of_clk20M;
 // // 异步复位，同步释放
-// always@(posedge clk_10M or negedge locked) begin
-//     if(~locked) reset_of_clk10M <= 1'b1;
-//     else        reset_of_clk10M <= 1'b0;
-// end
+always@(posedge clk_20M or negedge locked) begin
+    if(~locked) reset_of_clk20M <= 1'b1;
+    else        reset_of_clk20M <= 1'b0;
+end
 
 // always@(posedge clk_10M or posedge reset_of_clk10M) begin
 //     if(reset_of_clk10M)begin
@@ -249,7 +249,7 @@ assign dataready_int = {3'b000, uart_dataready, 2'b00};
 
 openmips mips0(
     .clk(clk_20M),
-    .rst(locked),
+    .rst(reset_of_clk20M),
 
     .inst_data_i(inst_data),
     .inst_addr_o(inst_addr),
@@ -269,7 +269,7 @@ openmips mips0(
 
 bus_ctrl bus0(
     .clk(clk_20M),
-    .rst(locked),
+    .rst(reset_of_clk20M),
 
     .if_ce_i(inst_ce),
     .if_addr_i(inst_addr),
