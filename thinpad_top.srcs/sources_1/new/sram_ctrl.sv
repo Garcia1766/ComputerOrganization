@@ -23,7 +23,7 @@ assign sram_ce_n = ~ce_i;
 assign sram_oe_n = ~(ce_i & (~we_i));           //不可用或者可写的时候可以有输出
 assign sram_we_n = ~(ce_i & we_i);
 assign sram_be_n = ~sel_i;
-assign sram_data = (ce_i & we_i)? data_i:32'bz; //可用且可写时，把数据传入bus，否则传入z
+assign sram_data = data_i; //可用且可写时，把数据传入bus，否则传入z
 assign data_o    = (ce_i & (~we_i)) ? sram_data : 32'h0; //可用但是不可写，则给出sram的数据
 
 endmodule
