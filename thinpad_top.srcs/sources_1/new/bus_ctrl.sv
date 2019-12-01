@@ -36,6 +36,10 @@ module bus_ctrl(
     output reg[3:0]         sram2_sel_o,        //extent ram片选信号
     input wire[`InstBus]    sram2_data_i,       //从extend sram读出的数据
 
+    output reg              vmem_ce_o,
+    output reg[16:0]        vmem_addr_o,
+    output reg[`InstBus]    vmem_data_o,
+
     output reg              stallreq_store      //store使用两个周期，需将流水线暂停
 );
 
@@ -68,6 +72,9 @@ always_comb begin
         uart_rdn    <= 1'b1;
         uart_data_buff <= 32'bz;
         stallreq_store <= 1'b0;
+        vmem_ce_o <= 1'b0;
+        vmem_addr_o <= 17'b0;
+        vmem_data_o <= `ZeroWord;
     end else begin
         if_data_o   <= `ZeroWord;
         mem_data_o  <= `ZeroWord;
@@ -81,6 +88,9 @@ always_comb begin
         uart_rdn    <= 1'b1;
         uart_data_buff <= 32'bz;
         stallreq_store <= 1'b0;
+        vmem_ce_o <= 1'b0;
+        vmem_addr_o <= 17'b0;
+        vmem_data_o <= `ZeroWord;
         if (mem_ce_i == 1'b1) begin
             if (mem_addr_i == 32'hBFD003F8) begin // UART串口
                 if (mem_we_i == 1'b1) begin //写串口
@@ -97,6 +107,10 @@ always_comb begin
                 end
             end else if (mem_addr_i == 32'hBFD003FC) begin // UART状态
                 mem_data_o <= {30'b0, uart_dataready, uart_tsre&uart_tbre};
+            end else if (mem_addr_i[23:20] == 4'b1000) begin
+                vmem_addr_o <= mem_addr_i[16:0];
+                vmem_data_o <= mem_data_i;
+                vmem_ce_o <= 1'b1;
             end else begin
                 sram_addr_o <= mem_addr_i[21:2];
                 sram_no     <= mem_addr_i[22];

@@ -105,6 +105,10 @@ always@(posedge clk_10M or negedge locked) begin
     else        reset_of_clk10M <= 1'b0;
 end
 
+always@(posedge clk_20M or negedge locked) begin
+    if(~locked) reset_of_clk20M <= 1'b1;
+    else        reset_of_clk20M <= 1'b0;
+end
 // always@(posedge clk_10M or posedge reset_of_clk10M) begin
 //     if(reset_of_clk10M)begin
 //         // Your Code
@@ -242,6 +246,38 @@ wire[3:0] sram2_sel;
 
 wire stallreq_store;
 
+wire vmem_ce;
+wire[16:0] vmem_addr;
+wire[31:0] vmem_data;
+
+reg[18:0] v_r_addr;
+reg[7:0] v_r_data;
+
+video_mem video_memory(
+    .addra(vmem_addr),
+    .clka(clk_20M),
+    .dina(vmem_data),
+    .wea(vmem_ce),
+
+    .addrb(v_r_addr),
+    .clkb(clk_50M),
+    .doutb(v_r_data)
+);
+
+assign video_clk = clk_50M;
+vga #(12, 800, 856, 976, 1040, 600, 637, 643, 666, 1, 1) vga800x600at75 (
+    .clk(clk_50M),
+    .hsync(video_hsync),
+    .vsync(video_vsync),
+    .data_enable(video_de),
+    .r(video_red),
+    .g(video_green),
+    .b(video_blue),
+
+    .video_data(v_r_data),
+    .video_addr(v_r_addr)
+);
+
 assign dpy0 = inst_addr[7:0];
 assign leds = inst_data[15:0];
 
@@ -304,7 +340,11 @@ bus_ctrl bus0(
     .sram2_data_o(sram2_data_o),
     .sram2_data_i(sram2_data_i),
 
-    .stallreq_store(stallreq_store)
+    .stallreq_store(stallreq_store),
+
+    .vmem_ce_o(vmem_ce),
+    .vmem_addr_o(vmem_addr),
+    .vmem_data_o(vmem_data)
 );
 
 sram_ctrl sram1(
