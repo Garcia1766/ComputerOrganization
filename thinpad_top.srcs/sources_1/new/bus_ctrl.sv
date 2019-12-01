@@ -34,8 +34,12 @@ module bus_ctrl(
     output reg[19:0]        sram2_addr_o,       //extent sram地址
     output reg[`InstBus]    sram2_data_o,       //向extent sram写入的数据
     output reg[3:0]         sram2_sel_o,        //extent ram片选信号
-    input wire[`InstBus]    sram2_data_i        //从extend sram读出的数据
+    input wire[`InstBus]    sram2_data_i,       //从extend sram读出的数据
+
+    output reg              stallreq_store      //store使用两个周期，需将流水线暂停
 );
+
+reg                 store_state;    // 写时序的状态机
 
 // ram读写的相关信号
 reg                 sram_ce_o;
@@ -47,32 +51,46 @@ reg[`InstBus]       sram_data_i;    //从sram读出的数据
 reg                 sram_no;        //0--baseram, 1--extraram
 
 reg[31:0] uart_data_buff;
-assign uart_data = ((rst == `RstDisable) && (mem_ce_i == 1'b1) && (mem_addr_i == 32'hBFD003F8) && (mem_we_i == 1'b1)) ? uart_data_buff : 32'bz;
+assign uart_data = uart_data_buff;
 
 always_comb begin
-    if_data_o   <= `ZeroWord;
-    mem_data_o  <= `ZeroWord;
-    sram_ce_o   <= 1'b0;
-    sram_we_o   <= 1'b0;
-    sram_addr_o <= `ZeroWord;
-    sram_no     <= 1'b0;
-    sram_data_o <= `ZeroWord;
-    sram_sel_o  <= 4'b0000;
-    uart_wrn    <= 1'b1;
-    uart_rdn    <= 1'b1;
     if (rst == `RstEnable) begin
-        if_data_o <= `ZeroWord;
-        mem_data_o <= `ZeroWord;
+        store_state <= 1'b0;
+        if_data_o   <= `ZeroWord;
+        mem_data_o  <= `ZeroWord;
+        sram_ce_o   <= 1'b0;
+        sram_we_o   <= 1'b0;
+        sram_addr_o <= `ZeroWord;
+        sram_no     <= 1'b0;
+        sram_data_o <= `ZeroWord;
+        sram_sel_o  <= 4'b0000;
+        uart_wrn    <= 1'b1;
+        uart_rdn    <= 1'b1;
+        uart_data_buff <= 32'bz;
+        stallreq_store <= 1'b0;
     end else begin
+        if_data_o   <= `ZeroWord;
+        mem_data_o  <= `ZeroWord;
+        sram_ce_o   <= 1'b0;
+        sram_we_o   <= 1'b0;
+        sram_addr_o <= `ZeroWord;
+        sram_no     <= 1'b0;
+        sram_data_o <= `ZeroWord;
+        sram_sel_o  <= 4'b0000;
+        uart_wrn    <= 1'b1;
+        uart_rdn    <= 1'b1;
+        uart_data_buff <= 32'bz;
+        stallreq_store <= 1'b0;
         if (mem_ce_i == 1'b1) begin
             if (mem_addr_i == 32'hBFD003F8) begin // UART串口
                 if (mem_we_i == 1'b1) begin //写串口
-                    if (clk == 1'b0) begin
-                        uart_wrn <= 1'b0;
-                    end else begin
-                        uart_wrn <= 1'b1;
-                    end
                     uart_data_buff <= mem_data_i;
+                    if (store_state == 1'b0) begin
+                        store_state <= 1'b1;
+                        stallreq_store <= 1'b1;
+                    end else begin
+                        uart_wrn <= 1'b0;
+                    end
                 end else begin    //读串口
                     uart_rdn <= 1'b0;
                     mem_data_o <= {24'b0, uart_data[7:0]};
@@ -80,13 +98,24 @@ always_comb begin
             end else if (mem_addr_i == 32'hBFD003FC) begin // UART状态
                 mem_data_o <= {30'b0, uart_dataready, uart_tsre&uart_tbre};
             end else begin
-                sram_ce_o   <= 1'b1;
-                sram_we_o   <= mem_we_i;
                 sram_addr_o <= mem_addr_i[21:2];
                 sram_no     <= mem_addr_i[22];
                 sram_data_o <= mem_data_i;
-                sram_sel_o  <= mem_sel_i;
                 mem_data_o  <= sram_data_i;
+                if (mem_we_i == 1'b1) begin
+                    if (store_state == 1'b0) begin
+                        store_state <= 1'b1;
+                        stallreq_store <= 1'b1;
+                    end else begin
+                        sram_ce_o   <= 1'b1;
+                        sram_we_o   <= mem_we_i;
+                        sram_sel_o  <= mem_sel_i;
+                    end
+                end else begin
+                    sram_ce_o   <= 1'b1;
+                    sram_we_o   <= mem_we_i;
+                    sram_sel_o  <= mem_sel_i;
+                end
             end
         end else if (if_ce_i == 1'b1) begin
             sram_ce_o   <= 1'b1;
@@ -111,25 +140,29 @@ always_comb begin
     sram1_ce_o      <= 1'b0;
     sram1_we_o      <= 1'b0;
     sram1_addr_o    <= 32'b0;
-    sram1_data_o    <= 32'b0;
+    sram1_data_o    <= 32'bz;
     sram1_sel_o     <= 4'b0;
     sram2_ce_o      <= 1'b0;
     sram2_we_o      <= 1'b0;
     sram2_addr_o    <= 32'b0;
-    sram2_data_o    <= 32'b0;
+    sram2_data_o    <= 32'bz;
     sram2_sel_o     <= 4'b0;
     if (sram_no == 1'b0) begin  //0x8......
         sram1_ce_o      <= sram_ce_o;
         sram1_we_o      <= sram_we_o;
         sram1_addr_o    <= sram_addr_o;
-        sram1_data_o    <= sram_data_o;
+        if (sram_we_o == 1'b1) begin
+            sram1_data_o <= sram_data_o;
+        end
         sram1_sel_o     <= sram_sel_o;
         sram_data_i     <= sram1_data_i;
     end else begin              //0x0......
         sram2_ce_o      <= sram_ce_o;
         sram2_we_o      <= sram_we_o;
         sram2_addr_o    <= sram_addr_o;
-        sram2_data_o    <= sram_data_o;
+        if (sram_we_o == 1'b1) begin
+            sram2_data_o <= sram_data_o;
+        end
         sram2_sel_o     <= sram_sel_o;
         sram_data_i     <= sram2_data_i;
     end

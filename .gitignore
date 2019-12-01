@@ -7,3 +7,5 @@ vivado.*
 *.sim/
 *.wcfg
 xvlog.*
+thinpad_top.srcs/sources_1/ip/*
+!thinpad_top.srcs/sources_1/ip/*.xci

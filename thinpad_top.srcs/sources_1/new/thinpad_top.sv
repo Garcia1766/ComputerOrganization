@@ -83,19 +83,19 @@ module thinpad_top(
 
 /* =========== Demo code begin =========== */
 
-// // PLL分频示例
-// wire locked, clk_10M, clk_20M;
-// pll_example clock_gen
-//  (
-//   // Clock out ports
-//   .clk_out1(clk_10M), // 时钟输出1，频率在IP配置界面中设置
-//   .clk_out2(clk_20M), // 时钟输出2，频率在IP配置界面中设置
-//   // Status and control signals
-//   .reset(reset_btn), // PLL复位输入
-//   .locked(locked), // 锁定输出，"1"表示时钟稳定，可作为后级电路复位
-//  // Clock in ports
-//   .clk_in1(clk_50M) // 外部时钟输入
-//  );
+// PLL分频示例
+wire locked, clk_10M, clk_20M;
+pll_example clock_gen
+ (
+  // Clock out ports
+  .clk_out1(clk_10M), // 时钟输出1，频率在IP配置界面中设置
+  .clk_out2(clk_20M), // 时钟输出2，频率在IP配置界面中设置
+  // Status and control signals
+  .reset(reset_btn), // PLL复位输入
+  .locked(locked), // 锁定输出，"1"表示时钟稳定，可作为后级电路复位
+ // Clock in ports
+  .clk_in1(clk_50M) // 外部时钟输入
+ );
 
 // reg reset_of_clk10M;
 // // 异步复位，同步释放
@@ -239,11 +239,13 @@ wire[31:0] sram2_data_o;
 wire[31:0] sram2_data_i;
 wire[3:0] sram2_sel;
 
+wire stallreq_store;
+
 assign dpy0 = inst_addr[7:0];
 assign leds = inst_data[15:0];
 
 openmips mips0(
-    .clk(clk_11M0592),
+    .clk(clk_20M),
     .rst(reset_btn),
 
     .inst_data_i(inst_data),
@@ -255,11 +257,13 @@ openmips mips0(
     .ram_data_o(ram_data_o),
     .ram_we_o(ram_we),
     .ram_sel_o(ram_sel),
-    .ram_ce_o(ram_ce)
+    .ram_ce_o(ram_ce),
+
+    .stallreq_store(stallreq_store)
 );
 
 bus_ctrl bus0(
-    .clk(clk_11M0592),
+    .clk(clk_20M),
     .rst(reset_btn),
 
     .if_ce_i(inst_ce),
@@ -292,7 +296,9 @@ bus_ctrl bus0(
     .sram2_addr_o(sram2_addr),
     .sram2_sel_o(sram2_sel),
     .sram2_data_o(sram2_data_o),
-    .sram2_data_i(sram2_data_i)
+    .sram2_data_i(sram2_data_i),
+
+    .stallreq_store(stallreq_store)
 );
 
 sram_ctrl sram1(
