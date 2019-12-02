@@ -84,13 +84,14 @@ module thinpad_top(
 /* =========== Demo code begin =========== */
 
 // PLL分频示例
-wire locked, clk_10M, clk_20M, clk_30M;
+wire locked, clk_10M, clk_20M, clk_30M, clk_40M;
 pll_example clock_gen
  (
   // Clock out ports
   .clk_out1(clk_10M), // 时钟输出1，频率在IP配置界面中设置
   .clk_out2(clk_20M), // 时钟输出2，频率在IP配置界面中设置
   .clk_out3(clk_30M),
+  .clk_out4(clk_40M),
   // Status and control signals
   .reset(reset_btn), // PLL复位输入
   .locked(locked), // 锁定输出，"1"表示时钟稳定，可作为后级电路复位
@@ -101,6 +102,7 @@ pll_example clock_gen
 reg reset_of_clk10M;
 reg reset_of_clk20M;
 reg reset_of_clk30M;
+reg reset_of_clk40M;
 // // 异步复位，同步释放
 always@(posedge clk_10M or negedge locked) begin
     if(~locked) reset_of_clk10M <= 1'b1;
@@ -115,6 +117,11 @@ end
 always@(posedge clk_30M or negedge locked) begin
     if(~locked) reset_of_clk30M <= 1'b1;
     else        reset_of_clk30M <= 1'b0;
+end
+
+always@(posedge clk_40M or negedge locked) begin
+    if(~locked) reset_of_clk40M <= 1'b1;
+    else        reset_of_clk40M <= 1'b0;
 end
 // always@(posedge clk_10M or posedge reset_of_clk10M) begin
 //     if(reset_of_clk10M)begin
