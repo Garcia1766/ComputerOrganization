@@ -269,7 +269,7 @@ reg[7:0] v_r_data;
 
 video_mem video_memory(
     .addra(vmem_addr),
-    .clka(clk_30M),
+    .clka(clk_40M),
     .dina(vmem_data),
     .wea(vmem_ce),
 
@@ -299,8 +299,8 @@ wire[5:0] dataready_int;
 assign dataready_int = {3'b000, uart_dataready, 2'b00};
 
 openmips mips0(
-    .clk(clk_30M),
-    .rst(reset_of_clk30M),
+    .clk(clk_40M),
+    .rst(reset_of_clk40M),
 
     .inst_data_i(inst_data),
     .inst_addr_o(inst_addr),
@@ -319,8 +319,8 @@ openmips mips0(
 );
 
 bus_ctrl bus0(
-    .clk(clk_30M),
-    .rst(reset_of_clk30M),
+    .clk(clk_40M),
+    .rst(reset_of_clk40M),
 
     .if_ce_i(inst_ce),
     .if_addr_i(inst_addr),
@@ -363,7 +363,7 @@ bus_ctrl bus0(
 
 sram_ctrl sram1(
     // 面向cpu的接口
-    .clk(clk_30M),
+    .clk(clk_40M),
     .addr_i(sram1_addr),
     .data_i(sram1_data_o),
     .ce_i(sram1_ce),
@@ -382,7 +382,7 @@ sram_ctrl sram1(
 
 sram_ctrl sram2(
     // 面向cpu的接口
-    .clk(clk_30M),
+    .clk(clk_40M),
     .addr_i(sram2_addr),
     .data_i(sram2_data_o),
     .ce_i(sram2_ce),
