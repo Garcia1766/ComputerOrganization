@@ -67,9 +67,11 @@ assign inst_o = inst_i;
 reg reg1_loadrelate;
 reg reg2_loadrelate;
 wire last_is_load;
+wire last_is_store;
 
-assign stallreq = reg1_loadrelate | reg2_loadrelate;
+assign stallreq = reg1_loadrelate | reg2_loadrelate | last_is_store;
 assign last_is_load = ((ex_aluop == `EXE_LB_OP) || (ex_aluop == `EXE_LH_OP) || (ex_aluop == `EXE_LW_OP)) ? 1'b1 : 1'b0;
+assign last_is_store = ((ex_aluop == `EXE_SB_OP) || (ex_aluop == `EXE_SW_OP)) ? 1'b1 : 1'b0;
 
 // 译码的组合逻辑
 always_comb begin
