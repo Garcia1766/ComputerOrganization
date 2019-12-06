@@ -23,6 +23,8 @@ module ex(
     output wire[`RegBus]    mem_addr_o,
     output wire[`RegBus]    reg2_o,
 
+    input wire[`RegBus]     ex_pc,
+
     // 解决连续两条store到同一个地址的冲突
     input wire[`AluOpBus]   last_aluop,
     input wire[`RegBus]     last_mem_addr,
@@ -31,7 +33,7 @@ module ex(
 
 wire[`RegBus] addr_o;
 assign aluop_o = aluop_i;
-assign addr_o = reg1_i + {{16{inst_i[15]}}, inst_i[15:0]};
+assign addr_o = (aluop_i == `EXE_LWPC_OP) ? (ex_pc + {{11{inst_i[18]}}, inst_i[18:0], 2'b0}) : (reg1_i + {{16{inst_i[15]}}, inst_i[15:0]});
 assign mem_addr_o = addr_o;
 assign reg2_o = reg2_i;
 

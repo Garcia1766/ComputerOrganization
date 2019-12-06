@@ -40,8 +40,12 @@ module id(
 
     output wire[`RegBus] inst_o,            // 向后传递指令
 
+    output wire[`RegBus] pc_o,
+
     input wire[`AluOpBus] ex_aluop          // 执行阶段的指令，解决load数据相关
 );
+
+assign pc_o = pc_i;
 
 wire[5:0] op  = inst_i[31:26];
 wire[4:0] op2 = inst_i[10:6];
@@ -281,6 +285,15 @@ always_comb begin
                 alusel_o    <= `EXE_RES_LS;
                 reg1_imm    <= 1'b0;
                 reg2_imm    <= 1'b0;
+                instvalid   <= `InstValid;
+            end
+            `EXE_LWPC: begin
+                wreg_o      <= `WriteEnable;
+                aluop_o     <= `EXE_LWPC_OP;
+                alusel_o    <= `EXE_RES_LS;
+                reg1_imm    <= 1'b1;
+                reg2_imm    <= 1'b1;
+                wd_o        <= inst_i[25:21];
                 instvalid   <= `InstValid;
             end
             `EXE_SPECIAL: begin

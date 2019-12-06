@@ -57,6 +57,7 @@
 `define EXE_BEQ   6'b000100
 `define EXE_BGTZ  6'b000111
 `define EXE_BNE   6'b000101
+`define EXE_LWPC  6'b111011
 
 `define EXE_LB    6'b100000
 `define EXE_LH    6'b100001
@@ -93,6 +94,8 @@
 `define EXE_LW_OP    5'b10011
 `define EXE_SB_OP    5'b10100
 `define EXE_SW_OP    5'b10101
+
+`define EXE_LWPC_OP  5'b10110
 
 //AluSel
 `define EXE_RES_ARITH 3'b001

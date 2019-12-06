@@ -28,6 +28,8 @@ module id_ex(
     output reg              ex_is_in_delayslot,
     output reg              is_in_delayslot_o,
     output reg[`RegBus]     ex_link_addr,
+    input wire[`RegBus]     id_pc,
+    output reg[`RegBus]     ex_pc,
 
     input wire[`RegBus]     id_inst,    // 向后传递指令
     output reg[`RegBus]     ex_inst
@@ -45,6 +47,7 @@ always_ff @ (posedge clk) begin
         ex_is_in_delayslot <= `NotInDelaySlot;
         is_in_delayslot_o  <= `NotInDelaySlot;
         ex_inst   <= `ZeroWord;
+        ex_pc <= `ZeroWord;
     end else if (stall[2] == `Stop && stall[3] == `NoStop) begin
         ex_aluop  <= `EXE_NOP_OP;
         ex_alusel <= `EXE_RES_NOP;
@@ -55,6 +58,7 @@ always_ff @ (posedge clk) begin
         ex_link_addr <= `ZeroWord;
         ex_is_in_delayslot <= `NotInDelaySlot;
         ex_inst   <= `ZeroWord;
+        ex_pc <= `ZeroWord;
     end else if (stall[2] == `NoStop) begin
         ex_aluop  <= id_aluop;
         ex_alusel <= id_alusel;
@@ -66,6 +70,7 @@ always_ff @ (posedge clk) begin
         ex_is_in_delayslot <= id_is_in_delayslot;
         is_in_delayslot_o <= next_in_delayslot;
         ex_inst   <= id_inst;
+        ex_pc <= id_pc;
     end
 end
 

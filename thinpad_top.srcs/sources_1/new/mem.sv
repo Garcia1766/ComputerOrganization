@@ -93,6 +93,12 @@ always_comb begin
                 wdata_o <= mem_data_i;
                 mem_sel_o <= 4'b1111;
             end
+            `EXE_LWPC_OP: begin
+                mem_addr_o <= mem_addr_i;
+                mem_ce_o <= `ChipEnable;
+                wdata_o <= mem_data_i;
+                mem_sel_o <= 4'b1111;
+            end
             `EXE_SB_OP: begin
                 mem_addr_o <= mem_addr_i;
                 mem_we_o <= `WriteEnable;

@@ -105,6 +105,9 @@ wire[`AluOpBus]   mem_aluop_o;
 wire[`RegBus]     mem_mem_addr_o;
 wire[`RegBus]     mem_reg2_o;
 
+wire[`RegBus] id_pc_o;
+wire[`RegBus] ex_pc_o;
+
 wire mem_ce;
 assign ram_ce_o = mem_ce;
 
@@ -174,6 +177,8 @@ id id0(
 
     .inst_o(id_inst_o),
 
+    .pc_o(id_pc_o),
+
     .ex_aluop(ex_aluop_o)
 );
 
@@ -224,6 +229,8 @@ id_ex id_ex0(
     .is_in_delayslot_o(is_in_delayslot),
 
     .id_inst(id_inst_o),
+    .id_pc(id_pc_o),
+    .ex_pc(ex_pc_o),
     .ex_inst(ex_inst_i)
 );
 
@@ -251,6 +258,8 @@ ex ex0(
     .aluop_o(ex_aluop_o),
     .mem_addr_o(ex_mem_addr_o),
     .reg2_o(ex_reg2_o),
+
+    .ex_pc(ex_pc_o),
 
     .last_aluop(mem_aluop_o),
     .last_mem_addr(mem_mem_addr_o),
